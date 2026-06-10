@@ -51,6 +51,7 @@ global G_MO_KFerragem       = 5.0     -- R$ por ferragem
 global G_MO_KPeso           = 0.2     -- R$ por kg estimado
 global G_MO_Densidade       = 700.0   -- kg/m3 (MDF/MDP medio)
 global G_MO_KPerdaSeguranca = 0.10   -- fator de perda CNC (8-12%); aplicado ao CMC_Chapas
+global G_MO_MargemMinimaPct = 15.0    -- margem liquida minima apos desconto, imposto e comissao
 -- Referencias globais aos campos de texto da aba Mao de Obra (rlConfig).
 -- Necessario porque dotNetObject criado dentro de fn buildMaoObra fica no escopo
 -- local da funcao — sem esses globais, onAdvance ve txtMOBase = undefined e o
@@ -2700,14 +2701,14 @@ fn abrirUICustoCompleto nChapas aproveitamento fitaMetros =
     global G_CustoFitaMetros = fitaMetros
     global G_CustoDespEst = despEst
 
-    rollout rlCusto "Planejamento de Custo e Cotacao" width:980 height:950
+    rollout rlCusto "Planejamento de Custo e Cotacao" width:980 height:735
     (
-        dotNetControl pnl "System.Windows.Forms.Panel" pos:[8,8] width:964 height:888
-        dotNetControl btnCriarCot   "System.Windows.Forms.Button" pos:[718,902] width:254 height:34
-        dotNetControl btnClose      "System.Windows.Forms.Button" pos:[8,902]   width:120 height:34
-        dotNetControl btnCotacoes   "System.Windows.Forms.Button" pos:[136,902] width:174 height:34
-        dotNetControl lbFooter      "System.Windows.Forms.Label"  pos:[318,911] width:388 height:18
-        dotNetControl lbLoad        "System.Windows.Forms.Label"  pos:[318,894] width:388 height:16
+        dotNetControl pnl "System.Windows.Forms.Panel" pos:[8,8] width:964 height:630
+        dotNetControl btnCriarCot   "System.Windows.Forms.Button" pos:[718,650] width:254 height:34
+        dotNetControl btnClose      "System.Windows.Forms.Button" pos:[8,650]   width:120 height:34
+        dotNetControl btnCotacoes   "System.Windows.Forms.Button" pos:[136,650] width:174 height:34
+        dotNetControl lbFooter      "System.Windows.Forms.Label"  pos:[318,659] width:388 height:18
+        dotNetControl lbLoad        "System.Windows.Forms.Label"  pos:[318,642] width:388 height:16
 
         local gridChapas, gridFitas
         local txtDesp, txtFerr, txtCola, txtFrete, txtMargemLucro, txtImposto, txtComissao
@@ -3369,6 +3370,21 @@ fn abrirUICustoCompleto nChapas aproveitamento fitaMetros =
                 showLoading lbl:"Registrando cotacao..."
             )
 
+            local margemMinima = try (::G_MO_MargemMinimaPct as float) catch 15.0
+            if pvFinal > 0.0 do
+            (
+                local margemLiquidaReal = 100.0 - ((cob / pvFinal) * 100.0) - imposto - comissao
+                if margemLiquidaReal < margemMinima and pvFinal >= cob do
+                (
+                    hideLoading()
+                    local msgMargem = "ATENCAO: com o desconto de " + (desconto as string) + \
+                        "%, a margem liquida estimada cai para " + (((floor (margemLiquidaReal * 10.0 + 0.5)) / 10.0) as string) + \
+                        "%, abaixo da margem minima de " + (margemMinima as string) + "%.\n\nContinuar mesmo assim?"
+                    if not (queryBox msgMargem title:"Margem abaixo do minimo") do return undefined
+                    showLoading lbl:"Registrando cotacao..."
+                )
+            )
+
             -- ── outrosArr para o payload (mantem ferragem, cola, MO, frete) ──
             local outrosArr = #(totalFerr, cola, maoObra, frete)
             local totalOut  = totalFerr + cola + maoObra + frete
@@ -3581,6 +3597,8 @@ fn abrirUICustoCompleto nChapas aproveitamento fitaMetros =
             btnCotacoes.Text  = "Ver Cotacoes"
             lbFooter.Text     = "Selecione uma linha de chapa para buscar preco. Edite Metros/R$/m na grade de fitas."
             lbLoad.Visible    = false
+            pnl.AutoScroll = true
+            pnl.AutoScrollMinSize = dnSize 946 884
             buildUi()
             try ( ::aplicarTemaForm lbLoad.FindForm() ) catch()
             ::pintarBotaoProximo btnCriarCot
@@ -4761,22 +4779,22 @@ fn abrirFiltroClienteCotacoes =
 -- ============================================================
 fn abrirCotacoes =
 (
-    -- Janela: 1100 x 820
+    -- Janela compacta para notebook, com paineis internos adaptaveis
     -- pnlLeft e tabCtrl declarados DIRETAMENTE no rollout (como todos os outros modais)
     -- para que o MaxScript gerencie o DPI scaling — nao via .NET API pos/size manual.
-    rollout rlCotacoes "Historico de Cotacoes" width:1100 height:820
+    rollout rlCotacoes "Historico de Cotacoes" width:1100 height:735
     (
         -- Coluna esquerda: filtros + lista (largura fixa 380px)
-        dotNetControl pnlLeft      "System.Windows.Forms.Panel"      pos:[8,8]    width:380 height:762
+        dotNetControl pnlLeft      "System.Windows.Forms.Panel"      pos:[8,8]    width:380 height:630
         -- Area direita: abas de conteudo (largura = 1100-8-380-8-8 = 696px)
-        dotNetControl tabCtrl      "System.Windows.Forms.TabControl" pos:[396,8]  width:696 height:762
+        dotNetControl tabCtrl      "System.Windows.Forms.TabControl" pos:[396,8]  width:696 height:630
         -- Loading overlay: cobre ambas as colunas durante chamadas API
-        dotNetControl pnlLoad      "System.Windows.Forms.Panel"      pos:[8,8]    width:1084 height:762
+        dotNetControl pnlLoad      "System.Windows.Forms.Panel"      pos:[8,8]    width:1084 height:630
         -- Rodape
-        dotNetControl btnVoltar        "System.Windows.Forms.Button"  pos:[8,778]   width:130 height:26
-        dotNetControl btnExportPDF     "System.Windows.Forms.Button"  pos:[148,778] width:170 height:26
-        dotNetControl btnExportProposta "System.Windows.Forms.Button" pos:[328,778] width:210 height:26
-        dotNetControl lbRodape         "System.Windows.Forms.Label"   pos:[548,782] width:490 height:18
+        dotNetControl btnVoltar        "System.Windows.Forms.Button"  pos:[8,650]   width:130 height:26
+        dotNetControl btnExportPDF     "System.Windows.Forms.Button"  pos:[148,650] width:170 height:26
+        dotNetControl btnExportProposta "System.Windows.Forms.Button" pos:[328,650] width:210 height:26
+        dotNetControl lbRodape         "System.Windows.Forms.Label"   pos:[548,654] width:490 height:18
 
         -- Variaveis da UI (preenchidas em buildUi)
         local gridCotacoes, lbClienteFiltro, btnSelectCli, btnLimparCli, txtDataIni, txtDataFim
@@ -4789,7 +4807,7 @@ fn abrirCotacoes =
         -- Pecas tab
         local gridPecas
         -- Editar Pecas tab
-        local gridEditPecas, lbPecasTotalM2, btnSalvarPecas, btnRestaurarPecas, lbPecasSalvStatus
+        local gridEditPecas, lbPecasTotalM2, btnSalvarPecas, btnRestaurarPecas, btnGerarPlanoPecas, lbPecasSalvStatus
         -- Editar tab — campos basicos
         local txtEditProj, txtEditEntrega, txtEditObs, txtEditDesc, btnSalvarEdit, lbSalvoStatus
         -- Editar tab — fitas, ferragens, outros
@@ -5064,10 +5082,200 @@ fn abrirCotacoes =
             try ( lbPecasTotalM2.Text = "Total M² consumido: " + totStr + " m²" ) catch()
         )
 
+        fn parseHistFloatText value defaultVal =
+        (
+            local raw = if value == undefined then "" else (value as string)
+            raw = substituteString raw "," "."
+            raw = substituteString raw "R$" ""
+            raw = substituteString raw " " ""
+            local v = defaultVal
+            try ( v = raw as float ) catch ( v = defaultVal )
+            v
+        )
+
+        fn onlyNumberChars txt =
+        (
+            local out = ""
+            local s = txt as string
+            for i = 1 to s.count do
+            (
+                local ch = s[i] as string
+                if (findString "0123456789.," ch) != undefined do out += ch
+            )
+            substituteString out "," "."
+        )
+
+        fn chapaDimsMmFromProduto produto =
+        (
+            local s = produto as string
+            s = substituteString s "×" "x"
+            s = substituteString s "X" "x"
+            s = substituteString s "*" "x"
+            local tokens = filterString s " "
+            for tk in tokens do
+            (
+                if (findString tk "x") != undefined do
+                (
+                    local parts = filterString tk "x"
+                    if parts.count >= 2 do
+                    (
+                        local maior = 0.0
+                        local segundo = 0.0
+                        for p in parts do
+                        (
+                            local n = 0.0
+                            try ( n = (onlyNumberChars p) as float ) catch ( n = 0.0 )
+                            if n > 100.0 do
+                            (
+                                if n > maior then
+                                (
+                                    segundo = maior
+                                    maior = n
+                                )
+                                else if n > segundo do segundo = n
+                            )
+                        )
+                        if maior > 0.0 and segundo > 0.0 do return #(segundo, maior)
+                    )
+                )
+            )
+            #(1830.0, 2750.0)
+        )
+
+        fn chapaAreaM2FromProduto produto =
+        (
+            local dims = chapaDimsMmFromProduto produto
+            if dims.count >= 2 then ((dims[1] / 1000.0) * (dims[2] / 1000.0)) else 0.0
+        )
+
+        fn gerarPlanoPecasHistorico =
+        (
+            if G_CotId <= 0 do
+            (
+                try ( lbPecasSalvStatus.Text = "Selecione uma cotacao primeiro." ) catch()
+                return undefined
+            )
+            if gridEditPecas == undefined do
+            (
+                try ( lbPecasSalvStatus.Text = "Grade de pecas indisponivel." ) catch()
+                return undefined
+            )
+            if gridEditPecas.Rows.Count == 0 do
+            (
+                try ( lbPecasSalvStatus.Text = "Nenhuma peca para gerar plano." ) catch()
+                return undefined
+            )
+            try ( gridEditPecas.EndEdit() ) catch()
+
+            local itens = undefined
+            try ( itens = ::apiGetCotacaoItems G_CotId ) catch()
+            local chapasCot = if itens != undefined and itens.count >= 1 then itens[1] else #()
+            local dimsChapa = if chapasCot.count > 0 then (chapaDimsMmFromProduto chapasCot[1][2]) else #(1830.0, 2750.0)
+
+            G_MainConfig      = #(dimsChapa[1] / 25.4, dimsChapa[2] / 25.4, 5.0 / 25.4, 15.0 / 25.4, false, 1, 1)
+            G_PiecesData      = #()
+            G_OriginalDims    = #()
+            G_TotalFitaMetros = 0.0
+
+            local criadas = 0
+            for r = 0 to (gridEditPecas.Rows.Count - 1) do
+            (
+                local rw = gridEditPecas.Rows.Item[r]
+                local nome  = try (rw.Cells.Item[0].Value as string) catch ""
+                local cMm   = parseHistFloatText rw.Cells.Item[1].Value 0.0
+                local lMm   = parseHistFloatText rw.Cells.Item[2].Value 0.0
+                local espMm = parseHistFloatText rw.Cells.Item[3].Value 0.0
+                local qtd   = try (rw.Cells.Item[4].Value as integer) catch 1
+                if qtd < 1 do qtd = 1
+                if nome == "" do nome = "Peca"
+
+                if cMm <= 0.0 or lMm <= 0.0 or espMm <= 0.0 do
+                (
+                    messageBox ("Medida invalida na linha " + ((r + 1) as string) + ".") title:"Plano de Corte"
+                    return undefined
+                )
+
+                local cSys = cMm / 25.4
+                local lSys = lMm / 25.4
+                local eSys = espMm / 25.4
+                for q = 1 to qtd do
+                (
+                    local obj = Box width:cSys length:lSys height:eSys isSelected:false
+                    obj.name = nome + "_HIST_MED"
+                    obj.pos = [0,0,0]
+                    obj.isHidden = false
+                    append G_PiecesData (PieceObj node:obj nome:nome comp:cSys larg:lSys esp:eSys \
+                        c1:(try (rw.Cells.Item[5].Value as booleanClass) catch false) \
+                        c2:(try (rw.Cells.Item[6].Value as booleanClass) catch false) \
+                        l1:(try (rw.Cells.Item[7].Value as booleanClass) catch false) \
+                        l2:(try (rw.Cells.Item[8].Value as booleanClass) catch false))
+                    criadas += 1
+                )
+            )
+
+            if criadas == 0 do
+            (
+                try ( lbPecasSalvStatus.Text = "Nenhuma peca valida para gerar plano." ) catch()
+                return undefined
+            )
+            try ( lbPecasSalvStatus.Text = "Gerando plano de corte..." ) catch()
+            executarMotorDeCorte()
+            try ( lbPecasSalvStatus.Text = "Plano de corte gerado a partir do historico." ) catch()
+        )
+
+        fn valorM2PorEsp chapas espMm =
+        (
+            for ch in chapas do
+            (
+                if abs(ch[1] - espMm) < 0.5 do
+                (
+                    local areaChapa = chapaAreaM2FromProduto ch[2]
+                    local valorUnit = try (ch[4] as float) catch 0.0
+                    if areaChapa > 0.0 and valorUnit > 0.0 do return (valorUnit / areaChapa)
+                )
+            )
+            0.0
+        )
+
         -- Serializa gridEditPecas de volta para JSON (mesmo formato de buildPecasJson)
         fn serializePecasGrid =
         (
             if gridEditPecas == undefined do return "[]"
+            local chapasCot = #()
+            local itens = undefined
+            try ( itens = ::apiGetCotacaoItems G_CotId ) catch()
+            if itens != undefined and itens.count >= 1 do chapasCot = itens[1]
+
+            local baseMatTotal = 0.0
+            for r = 0 to (gridEditPecas.Rows.Count - 1) do
+            (
+                local rwBase = gridEditPecas.Rows.Item[r]
+                local cBase = parseHistFloatText rwBase.Cells.Item[1].Value 0.0
+                local lBase = parseHistFloatText rwBase.Cells.Item[2].Value 0.0
+                local espBase = parseHistFloatText rwBase.Cells.Item[3].Value 0.0
+                local qtdBase = try (rwBase.Cells.Item[4].Value as integer) catch 1
+                if qtdBase < 1 do qtdBase = 1
+                local valorM2Base = valorM2PorEsp chapasCot espBase
+                baseMatTotal += ((cBase / 1000.0) * (lBase / 1000.0) * qtdBase * valorM2Base)
+            )
+
+            local cotCarregada = if G_CotDados != undefined then G_CotDados[1] else undefined
+            local cpChapas = if cotCarregada != undefined and cotCarregada.count >= 17 \
+                             then (try (cotCarregada[17] as float) catch 0.0) else 0.0
+            if cpChapas == 0.0 do
+            (
+                local oldCmc = if cotCarregada != undefined and cotCarregada.count >= 23 \
+                               then (try (cotCarregada[23] as float) catch 0.0) else 0.0
+                local oldCpFitas = if cotCarregada != undefined and cotCarregada.count >= 18 \
+                                   then (try (cotCarregada[18] as float) catch 0.0) else 0.0
+                cpChapas = oldCmc - oldCpFitas
+                if cpChapas < 0.0 do cpChapas = 0.0
+            )
+            local fatorCusto = if baseMatTotal > 0.0 and cpChapas > 0.0 then (cpChapas / baseMatTotal) \
+                               else (1.0 + (try (::G_MO_KPerdaSeguranca as float) catch 0.10))
+            if fatorCusto < 1.0 do fatorCusto = 1.0
+            if fatorCusto > 2.0 do fatorCusto = 2.0
+
             local ss = stringStream ""
             format "[" to:ss
             local nRows = gridEditPecas.Rows.Count
@@ -5076,9 +5284,9 @@ fn abrirCotacoes =
             (
                 local rw = gridEditPecas.Rows.Item[r]
                 local nome  = try (rw.Cells.Item[0].Value as string) catch ""
-                local cMm   = try (rw.Cells.Item[1].Value as float) catch 0.0
-                local lMm   = try (rw.Cells.Item[2].Value as float) catch 0.0
-                local espMm = try (rw.Cells.Item[3].Value as float) catch 0.0
+                local cMm   = parseHistFloatText rw.Cells.Item[1].Value 0.0
+                local lMm   = parseHistFloatText rw.Cells.Item[2].Value 0.0
+                local espMm = parseHistFloatText rw.Cells.Item[3].Value 0.0
                 local qtd   = try (rw.Cells.Item[4].Value as integer) catch 1
                 if qtd < 1 do qtd = 1
                 local fitaC1 = try (rw.Cells.Item[5].Value as booleanClass) catch false
@@ -5092,12 +5300,16 @@ fn abrirCotacoes =
                 if fitaC2 do fitaM += cMm / 1000.0
                 if fitaL1 do fitaM += lMm / 1000.0
                 if fitaL2 do fitaM += lMm / 1000.0
+                local valorM2 = valorM2PorEsp chapasCot espMm
+                local custoUnit = aUnit * valorM2 * fatorCusto
+                local custoTotal = custoUnit * qtd
                 local nomeSafe = substituteString nome "\"" "'"
                 if wrote > 0 do format "," to:ss
-                format "{\"nome\":\"%\",\"comp_mm\":%,\"larg_mm\":%,\"esp_mm\":%,\"qtd\":%,\"area_m2\":%,\"fita_m\":%,\"fita_c1\":%,\"fita_c2\":%,\"fita_l1\":%,\"fita_l2\":%,\"preco_m2\":0,\"custo_unit\":0,\"custo_total\":0}" \
+                format "{\"nome\":\"%\",\"comp_mm\":%,\"larg_mm\":%,\"esp_mm\":%,\"qtd\":%,\"area_m2\":%,\"fita_m\":%,\"fita_c1\":%,\"fita_c2\":%,\"fita_l1\":%,\"fita_l2\":%,\"preco_m2\":%,\"custo_unit\":%,\"custo_total\":%}" \
                     nomeSafe cMm lMm espMm qtd aUnit fitaM \
                     (if fitaC1 then "true" else "false") (if fitaC2 then "true" else "false") \
-                    (if fitaL1 then "true" else "false") (if fitaL2 then "true" else "false") to:ss
+                    (if fitaL1 then "true" else "false") (if fitaL2 then "true" else "false") \
+                    valorM2 custoUnit custoTotal to:ss
                 wrote += 1
             )
             format "]" to:ss
@@ -5532,13 +5744,17 @@ fn abrirCotacoes =
                     )
             )
 
+            local cotCarregada = if G_CotDados != undefined then G_CotDados[1] else undefined
+            local caFitasEdit = if cotCarregada != undefined and cotCarregada.count >= 13 \
+                                then (try (cotCarregada[13] as float) catch 0.0) else 0.0
+            if caFitasEdit < ccEfFitas do caFitasEdit = ccEfFitas
+
             local outrosArr = #(totalFerrEdit, cola, maoObra, frete)
-            local ccEfOutros = totalFerrEdit + frete  -- efetivo = ferragens + frete (exclui cola/maoObra)
-            local ccEfGeral  = (ccEfChapas + ccEfFitas + ccEfOutros) * (1.0 - desc / 100.0)
+            local ccEfOutros = totalFerrEdit + cola + frete  -- aquisicao sem mao de obra
+            local ccEfGeral  = ccEfChapas + caFitasEdit + ccEfOutros
 
             -- ── Recalculo CMC+Markup v9 ─────────────────────────────────────
             -- Chapas nao mudam na edicao; apenas fitas/ferragens/cola/frete/MO.
-            local cotCarregada = if G_CotDados != undefined then G_CotDados[1] else undefined
 
             -- custo_produto_chapas: parte chapas do CMC (nao muda na edicao)
             -- cot[17] = custo_produto_chapas (novo array alinhado, requere apiGetCotacao v2)
@@ -5576,16 +5792,41 @@ fn abrirCotacoes =
             local pctTotalEd = margemPct + impostoPctEd + comissaoPctEd
             if pctTotalEd > 95.0 do pctTotalEd = 95.0
             local newPV  = (newCob / (1.0 - pctTotalEd / 100.0)) * (1.0 - desc / 100.0)
-            -- CA  = chapas + fitas + ferragens + cola + frete  (sem MO)
-            local newCA  = cpChapas + ccEfFitas + totalFerrEdit + cola + frete
-            -- custo_produto_outros = ferragens + frete (sem cola/MO — definicao v9)
-            local newCpOutros = totalFerrEdit + frete
-            -- custo_produto_geral  = CMC (chapas+fitas) + outros_produto
-            local newCpGeral  = newCmc + newCpOutros
+
+            if newPV < newCob do
+            (
+                hideLoad()
+                local msgPrejuizo = "ATENCAO: com o desconto de " + (desc as string) + \
+                    "%, o preco final (R$ " + (money newPV) + ") fica ABAIXO do custo operacional (COB R$ " + \
+                    (money newCob) + ").\n\nA cotacao dara PREJUIZO. Continuar mesmo assim?"
+                if not (queryBox msgPrejuizo title:"Desconto abaixo do custo") do return undefined
+                showLoad()
+            )
+
+            local margemMinimaEd = try (::G_MO_MargemMinimaPct as float) catch 15.0
+            if newPV > 0.0 do
+            (
+                local margemLiquidaRealEd = 100.0 - ((newCob / newPV) * 100.0) - impostoPctEd - comissaoPctEd
+                if margemLiquidaRealEd < margemMinimaEd and newPV >= newCob do
+                (
+                    hideLoad()
+                    local msgMargemEd = "ATENCAO: com o desconto de " + (desc as string) + \
+                        "%, a margem liquida estimada cai para " + (((floor (margemLiquidaRealEd * 10.0 + 0.5)) / 10.0) as string) + \
+                        "%, abaixo da margem minima de " + (margemMinimaEd as string) + "%.\n\nContinuar mesmo assim?"
+                    if not (queryBox msgMargemEd title:"Margem abaixo do minimo") do return undefined
+                    showLoad()
+                )
+            )
+
+            -- CA  = chapas inteiras + fitas adquiridas + ferragens + cola + frete (sem MO)
+            local newCA  = ccEfChapas + caFitasEdit + totalFerrEdit + cola + frete
+            -- custo_produto_* legado: manter geral como CMC para compatibilidade com planilhas antigas
+            local newCpOutros = totalFerrEdit + cola + frete
+            local newCpGeral  = newCmc
 
             local res = ::apiAtualizarCotacaoFull G_CotId proj entrega obs desc \
                 chapasEdit fitasEdit ferragParam outrosArr \
-                ccEfChapas ccEfFitas ccEfOutros ccEfGeral \
+                ccEfChapas caFitasEdit ccEfOutros ccEfGeral \
                 maoObra:maoObra cmcVal:newCmc cobVal:newCob margemPct:margemPct \
                 precoVenda:newPV caTotal:newCA cpFitas:ccEfFitas \
                 cpOutros:newCpOutros cpGeral:newCpGeral \
@@ -5614,7 +5855,7 @@ fn abrirCotacoes =
             -- ── COLUNA ESQUERDA ──
             -- Leitura do tamanho real de pnlLeft em pixels logicos .NET
             local LW = try (pnlLeft.ClientSize.Width)  catch 380
-            local LH = try (pnlLeft.ClientSize.Height) catch 762
+            local LH = try (pnlLeft.ClientSize.Height) catch 630
 
             local grpFiltros = addGrp pnlLeft "Filtros" 0 0 LW 148
             addLbl grpFiltros "Cliente:" 8 22 54 16
@@ -5642,11 +5883,13 @@ fn abrirCotacoes =
             -- ── COLUNA DIREITA: tabCtrl ja posicionado pelo rollout ──
             -- Leitura do tamanho real em pixels logicos .NET
             local TW = try (tabCtrl.ClientSize.Width)  catch 696
-            local TH = try (tabCtrl.ClientSize.Height) catch 762
+            local TH = try (tabCtrl.ClientSize.Height) catch 630
 
             -- ──── TAB 1: Resumo ────
             local tabResumo = dotNetObject "System.Windows.Forms.TabPage"
             tabResumo.Text = "  Resumo  "
+            tabResumo.AutoScroll = true
+            tabResumo.AutoScrollMinSize = dnSz 0 650
             tabCtrl.TabPages.Add tabResumo
 
             -- Conteudo da aba Resumo
@@ -5716,6 +5959,7 @@ fn abrirCotacoes =
             pnlEd.Location = dnPt 0 0
             pnlEd.Size     = dnSz (TW - 6) (TH - 32)
             pnlEd.AutoScroll = true
+            pnlEd.AutoScrollMinSize = dnSz 0 735
             tabEditar.Controls.Add pnlEd
 
             local EW = TW - 30  -- largura efetiva dos controles
@@ -5812,6 +6056,7 @@ fn abrirCotacoes =
             gridEditPecas.AllowUserToAddRows    = false
             gridEditPecas.AllowUserToDeleteRows = false
             gridEditPecas.MultiSelect           = false
+            gridEditPecas.ReadOnly              = false
             gridEditPecas.EditMode = (dotNetClass "System.Windows.Forms.DataGridViewEditMode").EditOnKeystrokeOrF2
             gridEditPecas.SelectionMode = (dotNetClass "System.Windows.Forms.DataGridViewSelectionMode").CellSelect
 
@@ -5844,6 +6089,12 @@ fn abrirCotacoes =
 
             tabEditPecas.Controls.Add gridEditPecas
             styleGrid gridEditPecas fillCols:true
+            try ( gridEditPecas.ReadOnly = false ) catch()
+            try (
+                for ci = 0 to 8 do gridEditPecas.Columns.Item[ci].ReadOnly = false
+                gridEditPecas.Columns.Item[9].ReadOnly = true
+                gridEditPecas.Columns.Item[10].ReadOnly = true
+            ) catch()
 
             -- Destaca colunas calculadas (read-only) com fundo suave
             try (
@@ -5868,9 +6119,12 @@ fn abrirCotacoes =
             local gap  = 10
             local bx2  = TW - MGN - btnW           -- Salvar (primario) na borda direita
             local bx1  = bx2 - gap - btnW          -- Restaurar a esquerda dele
+            local bx0  = bx1 - gap - btnW          -- Gerar plano
             btnRestaurarPecas = addBtn tabEditPecas "Restaurar Original" bx1 footY btnW 30
             btnSalvarPecas    = addBtn tabEditPecas "Salvar Alteracoes"  bx2 footY btnW 30
+            btnGerarPlanoPecas = addBtn tabEditPecas "Gerar Plano"        bx0 footY btnW 30
             try ( ::pintarBotaoProximo btnSalvarPecas ) catch()
+            try ( ::pintarBotaoAtualizar btnGerarPlanoPecas ) catch()
             -- Status abaixo, alinhado ao total
             lbPecasSalvStatus = addLbl tabEditPecas "" MGN (footY + 34) (TW - MGN*2) 18
             try ( lbPecasSalvStatus.ForeColor = (dotNetClass "System.Drawing.Color").FromArgb 90 96 104 ) catch()
@@ -5892,8 +6146,10 @@ fn abrirCotacoes =
             dotNet.addEventHandler btnSalvarEdit "Click" (fn s a = salvarEdicao())
 
             -- Aba Editar Pecas — recalcular area ao editar celula
+            dotNet.addEventHandler gridEditPecas "CellBeginEdit" (fn s a = ( enableAccelerators = false ))
             dotNet.addEventHandler gridEditPecas "CellEndEdit" (fn s a =
             (
+                enableAccelerators = true
                 try (
                     recalcPecasRow a.RowIndex
                     recalcPecasTotal()
@@ -5966,6 +6222,10 @@ fn abrirCotacoes =
                 )
                 else
                     try ( lbPecasSalvStatus.Text = "Erro ao salvar: " + (if res.count >= 2 then res[2] else "?") ) catch()
+            ))
+            dotNet.addEventHandler btnGerarPlanoPecas "Click" (fn s a =
+            (
+                gerarPlanoPecasHistorico()
             ))
             dotNet.addEventHandler btnRestaurarPecas "Click" (fn s a =
             (

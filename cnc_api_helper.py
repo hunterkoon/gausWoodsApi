@@ -14,6 +14,7 @@ Comandos suportados:
 import base64
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -37,6 +38,41 @@ LOG_DIR      = os.path.join(os.path.dirname(__file__), "DADOS", "logs")
 PERF_FILE    = os.path.join(LOG_DIR, "maxscript_api_requests.log")
 ERROR_FILE   = os.path.join(LOG_DIR, "maxscript_api_errors.log")
 LAST_RESULT_STATUS = "?"
+
+
+def _load_brand_logo_svg() -> str:
+    """Return the Gaus Woods logo as clean inline SVG, or an empty string."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    for name in ("GAUSWOOD.svg", "Group 1 (1).svg"):
+        svg_path = os.path.join(here, name)
+        if not os.path.exists(svg_path):
+            continue
+        try:
+            with open(svg_path, encoding="utf-8") as f:
+                raw = f.read()
+            raw = re.sub(r'<\?xml[^>]+\?>', '', raw)
+            raw = re.sub(r'<sodipodi:namedview[^>]*/>', '', raw)
+            raw = re.sub(r'<sodipodi:namedview.*?</sodipodi:namedview>', '', raw, flags=re.S)
+            return raw.strip()
+        except Exception:
+            return ""
+    return ""
+
+
+def _brand_logo_block(svg_logo_inline=None) -> str:
+    svg_logo_inline = svg_logo_inline if svg_logo_inline is not None else _load_brand_logo_svg()
+    if svg_logo_inline:
+        return f"""
+        <div class="logo-wrap">
+          <div class="logo-svg">{svg_logo_inline}</div>
+        </div>"""
+    return """
+        <div class="logo-wrap">
+          <div class="logo-text-fallback">
+            <span class="logo-gw">GAUS WOODS</span><br>
+            <span class="logo-sub">MARCENARIA MINIMALISTA</span>
+          </div>
+        </div>"""
 
 # ---------------------------------------------------------------------------
 # Módulo-level cache de nomes de clientes — persiste entre chamadas no mesmo
@@ -1218,6 +1254,7 @@ def handle_export_cotacao_html(params_raw: list):
         pecas_list = []
 
     def brl(v): return f"R$ {float(v):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    logo_block = _brand_logo_block()
 
     # Linhas de chapas
     rows_ch = ""
@@ -1317,6 +1354,15 @@ def handle_export_cotacao_html(params_raw: list):
   body {{ font-family: Arial, sans-serif; font-size: 12px; margin: 20px; color: #222; }}
   h1   {{ font-size: 18px; color: #1a4e3c; margin-bottom: 4px; }}
   h2   {{ font-size: 14px; color: #1a4e3c; margin: 18px 0 6px; border-bottom: 1px solid #ccc; }}
+  .report-header {{ display:flex; align-items:center; justify-content:space-between; gap:24px; margin-bottom:16px; border-bottom:2px solid #1a4e3c; padding-bottom:12px; }}
+  .report-title {{ flex:1; text-align:right; }}
+  .report-title h1 {{ margin:0 0 4px; }}
+  .logo-wrap {{ flex-shrink:0; }}
+  .logo-svg {{ width:92px; height:auto; display:block; }}
+  .logo-svg svg {{ width:100%; height:auto; display:block; }}
+  .logo-text-fallback {{ color:#1a4e3c; line-height:1.1; text-align:left; }}
+  .logo-gw {{ font-size:18px; font-weight:bold; letter-spacing:2px; }}
+  .logo-sub {{ font-size:8px; letter-spacing:1px; text-transform:uppercase; }}
   table  {{ width: 100%; border-collapse: collapse; margin-bottom: 10px; }}
   th   {{ background: #1a4e3c; color: #fff; padding: 5px 8px; text-align: left; }}
   td   {{ padding: 4px 8px; border-bottom: 1px solid #eee; }}
@@ -1331,8 +1377,13 @@ def handle_export_cotacao_html(params_raw: list):
 </style>
 </head>
 <body>
-<h1>Cotação #{cotacao_id} &nbsp;·&nbsp; {proj}</h1>
-<div style="color:#666; margin-bottom:14px">Emitida em: {data_cot} &nbsp;|&nbsp; Aproveitamento: {f"{aprov:.1f}".replace(".", ",")}%</div>
+<div class="report-header">
+  {logo_block}
+  <div class="report-title">
+    <h1>Cotação #{cotacao_id} &nbsp;·&nbsp; {proj}</h1>
+    <div style="color:#666">Emitida em: {data_cot} &nbsp;|&nbsp; Aproveitamento: {f"{aprov:.1f}".replace(".", ",")}%</div>
+  </div>
+</div>
 
 <h2>Cliente</h2>
 <div class="info-grid">
@@ -1420,7 +1471,7 @@ def handle_export_proposta_cliente_html(params_raw: list):
       - Paleta: Grafite #1F211F | Madeira #4B2E1B | Carvalho #EFE3D1 |
                 Areia #D4BEA2 | Marfim #F8F3EA
       - Tipografia: Montserrat (Google Fonts)
-      - Logo Group 1 (1).svg embarcado inline
+      - Logo GAUSWOOD.svg embarcado inline
       - Conteúdo gerado automaticamente a partir dos dados da cotação
     """
     import webbrowser, re
@@ -1502,21 +1553,7 @@ def handle_export_proposta_cliente_html(params_raw: list):
         s = re.sub(r'\s+(Guararapes|Berneck|Rehau|FGVTN|Grandes\s+Marcas)\s*$', '', s, flags=re.I)
         return s.strip()
 
-    # ── Logo SVG ────────────────────────────────────────────────────────────
-    _here    = os.path.dirname(os.path.abspath(__file__))
-    svg_path = os.path.join(_here, "Group 1 (1).svg")
-    svg_logo_inline = ""
-    if os.path.exists(svg_path):
-        try:
-            with open(svg_path, encoding="utf-8") as _f:
-                _raw = _f.read()
-            # Remover declaração XML e namespace inkscape/sodipodi para embed limpo
-            _raw = re.sub(r'<\?xml[^>]+\?>', '', _raw)
-            _raw = re.sub(r'<sodipodi:namedview[^>]*/>', '', _raw)
-            _raw = re.sub(r'<sodipodi:namedview.*?</sodipodi:namedview>', '', _raw, flags=re.S)
-            svg_logo_inline = _raw.strip()
-        except Exception:
-            svg_logo_inline = ""
+    svg_logo_inline = _load_brand_logo_svg()
 
     # ── Tipo do projeto (para textos automáticos) ────────────────────────────
     proj_l = proj.lower()
@@ -1620,20 +1657,7 @@ def handle_export_proposta_cliente_html(params_raw: list):
     def _ul(items):
         return "<ul>" + "".join(f"<li>{i}</li>" for i in items) + "</ul>"
 
-    # ── Logo: fallback texto se SVG não encontrado ───────────────────────────
-    if svg_logo_inline:
-        logo_block = f"""
-        <div class="logo-wrap">
-          <div class="logo-svg">{svg_logo_inline}</div>
-        </div>"""
-    else:
-        logo_block = """
-        <div class="logo-wrap">
-          <div class="logo-text-fallback">
-            <span class="logo-gw">GAUS WOODS</span><br>
-            <span class="logo-sub">MARCENARIA MINIMALISTA</span>
-          </div>
-        </div>"""
+    logo_block = _brand_logo_block(svg_logo_inline)
 
     # ════════════════════════════════════════════════════════════════════════
     html = f"""<!DOCTYPE html>

@@ -345,6 +345,13 @@ def _row_to_summary(row: dict) -> CotacaoSummary:
     )
 
 
+def _pv_divisor(cob: float, margem_pct: float, imposto_pct: float = 0.0, comissao_pct: float = 0.0) -> float:
+    if cob <= 0:
+        return 0.0
+    soma_pct = min(margem_pct + imposto_pct + comissao_pct, 95.0)
+    return cob / (1.0 - soma_pct / 100.0)
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -488,11 +495,26 @@ def detalhe_cotacao(cotacao_id: int, conn=Depends(get_db)):
 @router.put("/{cotacao_id}/desconto", response_model=CotacaoOut,
             summary="Atualizar desconto global de uma cotação")
 def atualizar_desconto(cotacao_id: int, payload: DescontoUpdate, conn=Depends(get_db)):
-    existing = query_one(conn, "SELECT id FROM cotacoes WHERE id = %s", (cotacao_id,))
+    existing = query_one(conn, "SELECT * FROM cotacoes WHERE id = %s", (cotacao_id,))
     if not existing:
         raise HTTPException(404, f"Cotação {cotacao_id} não encontrada")
-    execute(conn, "UPDATE cotacoes SET desconto_global = %s WHERE id = %s",
-            (payload.desconto_global, cotacao_id), commit=True)
+    cob = float(existing.get("custo_operacional_base") or 0)
+    margem = float(existing.get("margem_lucro_pct") or 0)
+    imposto = float(existing.get("imposto_pct") or 0)
+    comissao = float(existing.get("comissao_pct") or 0)
+    pv_bruto = _pv_divisor(cob, margem, imposto, comissao)
+    if pv_bruto > 0:
+        pv_final = pv_bruto * (1.0 - payload.desconto_global / 100.0)
+        execute(conn, """
+            UPDATE cotacoes
+               SET desconto_global = %s,
+                   preco_venda_final = %s,
+                   total_geral = %s
+             WHERE id = %s
+        """, (payload.desconto_global, pv_final, pv_final, cotacao_id), commit=True)
+    else:
+        execute(conn, "UPDATE cotacoes SET desconto_global = %s WHERE id = %s",
+                (payload.desconto_global, cotacao_id), commit=True)
     row = query_one(conn, "SELECT * FROM cotacoes WHERE id = %s", (cotacao_id,))
     return _row_to_out(row)
 
@@ -548,8 +570,9 @@ def atualizar_cotacao(cotacao_id: int, payload: CotacaoUpdate, conn=Depends(get_
         values.append(json.dumps(payload.outros.model_dump()))
         updates.append("total_outros = %s"); values.append(novo_total_outros)
 
-    # Recomputa total_geral sempre que qualquer componente mudar
-    if any(x is not None for x in [payload.chapas, payload.fitas, payload.outros, payload.desconto_global]):
+    # Compatibilidade legacy: se o cliente nao manda preco_venda_final,
+    # total_geral continua pelo somatorio antigo dos componentes.
+    if payload.preco_venda_final is None and any(x is not None for x in [payload.chapas, payload.fitas, payload.outros, payload.desconto_global]):
         desc = payload.desconto_global if payload.desconto_global is not None \
                else float(existing.get("desconto_global") or 0)
         novo_total = (novo_total_chapas + novo_total_fitas + novo_total_outros) * (1.0 - desc / 100.0)
@@ -593,6 +616,7 @@ def atualizar_cotacao(cotacao_id: int, payload: CotacaoUpdate, conn=Depends(get_
         updates.append("margem_lucro_pct = %s");         values.append(payload.margem_lucro_pct)
     if payload.preco_venda_final is not None:
         updates.append("preco_venda_final = %s");        values.append(payload.preco_venda_final)
+        updates.append("total_geral = %s");              values.append(payload.preco_venda_final)
     if payload.imposto_pct is not None:
         updates.append("imposto_pct = %s");              values.append(payload.imposto_pct)
     if payload.comissao_pct is not None:
