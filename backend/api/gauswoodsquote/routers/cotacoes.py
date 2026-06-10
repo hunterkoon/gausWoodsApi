@@ -18,6 +18,9 @@ from pydantic import BaseModel, Field
 from ..database import get_db, query, query_one, count, execute
 from ..deps import pagination, build_page
 
+from ..pricing import pv_divisor, pv_com_desconto, abaixo_custo
+from ..pricing_service import PricingInput, PricingResult, calcular_pricing
+
 router = APIRouter()
 _TABLE_READY = False
 _TABLE_LOCK = Lock()
@@ -129,6 +132,8 @@ class CotacaoOut(BaseModel):
     preco_venda_final:         float = 0.0
     imposto_pct:               float = 0.0
     comissao_pct:              float = 0.0
+    pricing_snapshot_json:     Optional[str] = None
+    pricing_version:           int = 1
     observacoes:        Optional[str]
     cliente_id:         Optional[int]
     nome_projeto:       Optional[str]
@@ -248,6 +253,21 @@ ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS margem_lucro_pct          NUMERIC(
 ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS preco_venda_final         NUMERIC(12,2) DEFAULT 0;
 ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS imposto_pct               NUMERIC(6,2)  DEFAULT 0;
 ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS comissao_pct              NUMERIC(6,2)  DEFAULT 0;
+-- v10: snapshot do calculo de precificacao (markup divisor)
+ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS pricing_snapshot_json     TEXT;
+ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS pricing_version           INTEGER DEFAULT 1;
+
+CREATE TABLE IF NOT EXISTS preco_historico (
+    id              SERIAL PRIMARY KEY,
+    cotacao_id      INTEGER NOT NULL,
+    tipo            VARCHAR(20) NOT NULL,
+    produto         VARCHAR(200) NOT NULL,
+    valor_unit      NUMERIC(12,4) NOT NULL,
+    unidade         VARCHAR(20) DEFAULT 'un',
+    registrado_em   TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_preco_hist_cotacao ON preco_historico(cotacao_id);
+CREATE INDEX IF NOT EXISTS idx_preco_hist_produto ON preco_historico(produto);
 """
 
 
@@ -265,6 +285,40 @@ def ensure_table(conn):
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+def _registrar_precos(conn, cotacao_id: int, payload: "CotacaoIn"):
+    """Registra snapshot dos precos dos insumos usados na cotacao para historico."""
+    rows = []
+    for c in payload.chapas:
+        rows.append((cotacao_id, "chapa", c.produto, c.valor_unit, "un"))
+    for f in payload.fitas:
+        rows.append((cotacao_id, "fita", f.produto, f.valor_m, "m"))
+    for f in payload.ferragens:
+        rows.append((cotacao_id, "ferragem", f.nome, f.valor_unit, "un"))
+    if not rows:
+        return
+    placeholders = ",".join(["(%s,%s,%s,%s,%s)"] * len(rows))
+    flat_values = [v for row in rows for v in row]
+    execute(conn,
+        f"INSERT INTO preco_historico (cotacao_id, tipo, produto, valor_unit, unidade) VALUES {placeholders}",
+        flat_values, commit=True)
+
+def _build_pricing_snapshot(cob: float, margem: float, imposto: float, comissao: float,
+                             desconto: float, pv_final_fallback: float = 0.0) -> dict:
+    """Monta o snapshot do calculo de precificacao (markup divisor v10)."""
+    pv_bruto = _pv_divisor(cob, margem, imposto, comissao)
+    pv_final = pv_com_desconto(pv_bruto, desconto) if pv_bruto > 0 else pv_final_fallback
+    return {
+        "custo_operacional_base": round(cob, 2),
+        "margem_lucro_pct": margem,
+        "imposto_pct": imposto,
+        "comissao_pct": comissao,
+        "desconto_global": desconto,
+        "preco_venda_bruto": round(pv_bruto, 2),
+        "preco_venda_final": round(pv_final, 2),
+        "abaixo_custo": abaixo_custo(pv_final, cob) if cob > 0 else False,
+    }
+
 
 def _parse_ferragens(raw: Optional[str]) -> List[ItemFerragem]:
     if not raw:
@@ -320,6 +374,8 @@ def _row_to_out(row: dict) -> CotacaoOut:
         preco_venda_final=float(row.get("preco_venda_final") or 0),
         imposto_pct=float(row.get("imposto_pct") or 0),
         comissao_pct=float(row.get("comissao_pct") or 0),
+        pricing_snapshot_json=row.get("pricing_snapshot_json"),
+        pricing_version=int(row.get("pricing_version") or 1),
         observacoes=row.get("observacoes"),
         cliente_id=row.get("cliente_id"),
         nome_projeto=row.get("nome_projeto"),
@@ -345,16 +401,25 @@ def _row_to_summary(row: dict) -> CotacaoSummary:
     )
 
 
-def _pv_divisor(cob: float, margem_pct: float, imposto_pct: float = 0.0, comissao_pct: float = 0.0) -> float:
-    if cob <= 0:
-        return 0.0
-    soma_pct = min(margem_pct + imposto_pct + comissao_pct, 95.0)
-    return cob / (1.0 - soma_pct / 100.0)
+_pv_divisor = pv_divisor
 
 
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
+@router.post("/pricing/calcular", response_model=PricingResult,
+             summary="Calcular precificacao (CA/CMC/COB/PV) sem persistir")
+def calcular_precificacao(payload: PricingInput):
+    """Motor de calculo central de precificacao.
+
+    Recebe chapas, pecas e parametros comerciais brutos e retorna o
+    detalhamento completo (CA, CMC, COB, PV bruto/final, alertas).
+    Nao persiste nada — uso para preview/validacao e para futura migracao
+    do calculo do MaxScript/planilha para esta API.
+    """
+    return calcular_pricing(payload)
+
 
 @router.post("", response_model=CotacaoOut, status_code=201,
              summary="Criar nova cotação de plano de corte")
@@ -369,6 +434,13 @@ def criar_cotacao(payload: CotacaoIn, conn=Depends(get_db)):
     pecas_json = json.dumps(payload.pecas_json, ensure_ascii=False) \
         if payload.pecas_json else None
 
+    pricing_snapshot = _build_pricing_snapshot(
+        payload.custo_operacional_base, payload.margem_lucro_pct,
+        payload.imposto_pct, payload.comissao_pct, payload.desconto_global,
+        pv_final_fallback=payload.preco_venda_final,
+    )
+    pricing_snapshot_json = json.dumps(pricing_snapshot, ensure_ascii=False)
+
     row = execute(conn, """
         INSERT INTO cotacoes
           (chapas_json, fitas_json, outros_json,
@@ -381,8 +453,9 @@ def criar_cotacao(payload: CotacaoIn, conn=Depends(get_db)):
            mao_obra, mao_obra_manual,
            custo_aquisicao_total, custo_material_consumido, custo_operacional_base,
            margem_lucro_pct, preco_venda_final, imposto_pct, comissao_pct,
+           pricing_snapshot_json, pricing_version,
            criado_em)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,NOW())
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,1,NOW())
         RETURNING id, criado_em
     """, (
         json.dumps([c.model_dump() for c in payload.chapas]),
@@ -418,9 +491,13 @@ def criar_cotacao(payload: CotacaoIn, conn=Depends(get_db)):
         payload.preco_venda_final,
         payload.imposto_pct,
         payload.comissao_pct,
+        pricing_snapshot_json,
     ), commit=True, returning=True)
 
-    row_full = query_one(conn, "SELECT * FROM cotacoes WHERE id = %s", (row[0],))
+    cotacao_id = row[0]
+    _registrar_precos(conn, cotacao_id, payload)
+
+    row_full = query_one(conn, "SELECT * FROM cotacoes WHERE id = %s", (cotacao_id,))
     return _row_to_out(row_full)
 
 
@@ -492,31 +569,50 @@ def detalhe_cotacao(cotacao_id: int, conn=Depends(get_db)):
     return _row_to_out(row)
 
 
-@router.put("/{cotacao_id}/desconto", response_model=CotacaoOut,
+@router.put("/{cotacao_id}/desconto",
             summary="Atualizar desconto global de uma cotação")
 def atualizar_desconto(cotacao_id: int, payload: DescontoUpdate, conn=Depends(get_db)):
     existing = query_one(conn, "SELECT * FROM cotacoes WHERE id = %s", (cotacao_id,))
     if not existing:
         raise HTTPException(404, f"Cotação {cotacao_id} não encontrada")
-    cob = float(existing.get("custo_operacional_base") or 0)
+    cob_val = float(existing.get("custo_operacional_base") or 0)
     margem = float(existing.get("margem_lucro_pct") or 0)
     imposto = float(existing.get("imposto_pct") or 0)
     comissao = float(existing.get("comissao_pct") or 0)
-    pv_bruto = _pv_divisor(cob, margem, imposto, comissao)
+    pv_bruto = _pv_divisor(cob_val, margem, imposto, comissao)
+    warning = None
+    snapshot = _build_pricing_snapshot(cob_val, margem, imposto, comissao,
+                                        payload.desconto_global,
+                                        pv_final_fallback=float(existing.get("preco_venda_final") or 0))
+    snapshot_json = json.dumps(snapshot, ensure_ascii=False)
+    nova_versao = int(existing.get("pricing_version") or 1) + 1
     if pv_bruto > 0:
-        pv_final = pv_bruto * (1.0 - payload.desconto_global / 100.0)
+        pv_final = pv_com_desconto(pv_bruto, payload.desconto_global)
+        if abaixo_custo(pv_final, cob_val):
+            warning = (f"Preço final R$ {pv_final:.2f} está abaixo do custo "
+                       f"operacional R$ {cob_val:.2f} — venda com prejuízo.")
         execute(conn, """
             UPDATE cotacoes
                SET desconto_global = %s,
                    preco_venda_final = %s,
-                   total_geral = %s
+                   total_geral = %s,
+                   pricing_snapshot_json = %s,
+                   pricing_version = %s
              WHERE id = %s
-        """, (payload.desconto_global, pv_final, pv_final, cotacao_id), commit=True)
+        """, (payload.desconto_global, pv_final, pv_final, snapshot_json, nova_versao, cotacao_id), commit=True)
     else:
-        execute(conn, "UPDATE cotacoes SET desconto_global = %s WHERE id = %s",
-                (payload.desconto_global, cotacao_id), commit=True)
+        execute(conn, """
+            UPDATE cotacoes
+               SET desconto_global = %s,
+                   pricing_snapshot_json = %s,
+                   pricing_version = %s
+             WHERE id = %s
+        """, (payload.desconto_global, snapshot_json, nova_versao, cotacao_id), commit=True)
     row = query_one(conn, "SELECT * FROM cotacoes WHERE id = %s", (cotacao_id,))
-    return _row_to_out(row)
+    result = _row_to_out(row).model_dump()
+    if warning:
+        result["warning"] = warning
+    return result
 
 
 @router.put("/{cotacao_id}", response_model=CotacaoOut,
@@ -570,12 +666,24 @@ def atualizar_cotacao(cotacao_id: int, payload: CotacaoUpdate, conn=Depends(get_
         values.append(json.dumps(payload.outros.model_dump()))
         updates.append("total_outros = %s"); values.append(novo_total_outros)
 
-    # Compatibilidade legacy: se o cliente nao manda preco_venda_final,
-    # total_geral continua pelo somatorio antigo dos componentes.
+    # total_geral: usar preco_venda_final (v9+) quando disponivel,
+    # senao fallback para soma legacy dos componentes.
     if payload.preco_venda_final is None and any(x is not None for x in [payload.chapas, payload.fitas, payload.outros, payload.desconto_global]):
+        cob_val = payload.custo_operacional_base if payload.custo_operacional_base is not None \
+                  else float(existing.get("custo_operacional_base") or 0)
+        margem_val = payload.margem_lucro_pct if payload.margem_lucro_pct is not None \
+                     else float(existing.get("margem_lucro_pct") or 0)
+        imp_val = payload.imposto_pct if payload.imposto_pct is not None \
+                  else float(existing.get("imposto_pct") or 0)
+        com_val = payload.comissao_pct if payload.comissao_pct is not None \
+                  else float(existing.get("comissao_pct") or 0)
         desc = payload.desconto_global if payload.desconto_global is not None \
                else float(existing.get("desconto_global") or 0)
-        novo_total = (novo_total_chapas + novo_total_fitas + novo_total_outros) * (1.0 - desc / 100.0)
+        if cob_val > 0:
+            pv_bruto = _pv_divisor(cob_val, margem_val, imp_val, com_val)
+            novo_total = pv_com_desconto(pv_bruto, desc)
+        else:
+            novo_total = (novo_total_chapas + novo_total_fitas + novo_total_outros) * (1.0 - desc / 100.0)
         updates.append("total_geral = %s"); values.append(novo_total)
 
     # Custo efetivo
@@ -622,6 +730,31 @@ def atualizar_cotacao(cotacao_id: int, payload: CotacaoUpdate, conn=Depends(get_
     if payload.comissao_pct is not None:
         updates.append("comissao_pct = %s");             values.append(payload.comissao_pct)
 
+    # Snapshot de precificacao (v10) — recomputado sempre que algum parametro
+    # de markup ou o desconto mudar, com versao incrementada.
+    pricing_fields = [payload.custo_operacional_base, payload.margem_lucro_pct,
+                       payload.imposto_pct, payload.comissao_pct,
+                       payload.desconto_global, payload.preco_venda_final]
+    if any(x is not None for x in pricing_fields):
+        cob_val = payload.custo_operacional_base if payload.custo_operacional_base is not None \
+                  else float(existing.get("custo_operacional_base") or 0)
+        margem_val = payload.margem_lucro_pct if payload.margem_lucro_pct is not None \
+                     else float(existing.get("margem_lucro_pct") or 0)
+        imp_val = payload.imposto_pct if payload.imposto_pct is not None \
+                  else float(existing.get("imposto_pct") or 0)
+        com_val = payload.comissao_pct if payload.comissao_pct is not None \
+                  else float(existing.get("comissao_pct") or 0)
+        desc_val = payload.desconto_global if payload.desconto_global is not None \
+                   else float(existing.get("desconto_global") or 0)
+        pv_final_val = payload.preco_venda_final if payload.preco_venda_final is not None \
+                        else float(existing.get("preco_venda_final") or 0)
+        snapshot = _build_pricing_snapshot(cob_val, margem_val, imp_val, com_val, desc_val,
+                                            pv_final_fallback=pv_final_val)
+        updates.append("pricing_snapshot_json = %s")
+        values.append(json.dumps(snapshot, ensure_ascii=False))
+        updates.append("pricing_version = %s")
+        values.append(int(existing.get("pricing_version") or 1) + 1)
+
     # Peças do plano de corte — salva fita_c1/c2/l1/l2 por peça
     if payload.pecas_json is not None:
         pj = payload.pecas_json
@@ -636,3 +769,26 @@ def atualizar_cotacao(cotacao_id: int, payload: CotacaoUpdate, conn=Depends(get_
 
     row = query_one(conn, "SELECT * FROM cotacoes WHERE id = %s", (cotacao_id,))
     return _row_to_out(row)
+
+
+@router.get("/precos/historico", summary="Historico de precos de insumos")
+def historico_precos(
+    produto: Optional[str] = Query(None),
+    tipo:    Optional[str] = Query(None),
+    limit:   int = Query(50, ge=1, le=500),
+    conn=Depends(get_db),
+):
+    """Retorna variacao de precos ao longo das cotacoes."""
+    conds, params = [], []
+    if produto:
+        conds.append("produto ILIKE %s"); params.append(f"%{produto}%")
+    if tipo:
+        conds.append("tipo = %s"); params.append(tipo)
+    where = ("WHERE " + " AND ".join(conds)) if conds else ""
+    rows = query(conn,
+        f"""SELECT produto, tipo, valor_unit, unidade, cotacao_id, registrado_em
+            FROM preco_historico {where}
+            ORDER BY registrado_em DESC
+            LIMIT %s""",
+        params + [limit])
+    return rows

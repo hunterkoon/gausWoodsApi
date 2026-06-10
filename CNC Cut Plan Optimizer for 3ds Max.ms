@@ -903,6 +903,114 @@ fn apiCriarCotacao chapasArr fitasArr outrosArr despPct aprovPct totalChapas tot
 )
 
 -- ============================================================
+-- API: Calcular precificacao (CMC/COB/PV) — fonte oficial do calculo
+-- monetario (v10, markup divisor). Recebe geometria/precos brutos e
+-- devolve os totais ja calculados pela mesma engine de cnc_planilha.
+--
+-- chapasArr  = #(#(espessura_mm, produto, qtd, preco_unit, subtotal), ...) (de finalizarCotacao)
+-- wMm/hMm    = dimensoes da chapa (mm)
+-- piecesData = G_PiecesData (PieceObj, comp/larg/esp em polegadas)
+-- fitasMultiLinhas = G_FitasMultiLinhas #(nome, metros, valor_m, rolo_m)
+--
+-- Retorna #(true, #(cmc, cob, pv, pvFinal, descValor, priceMo, moAuto,
+--                    abaixoCusto, totalAquisicao, custoChapas, custoFita,
+--                    custoFitaAq, nrRolos, warnings))
+-- ou #(false, mensagemErro)
+-- ============================================================
+fn apiCalcularPrecificacao chapasArr wMm hMm piecesData fitasMultiLinhas priceFerragem priceCola priceFrete priceMaoObra moManual margemPct impostoPct comissaoPct descontoGlobal aprovPct =
+(
+    local tmpDir      = dirSep sysInfo.tempDir
+    local pricingFile = tmpDir + "cnc_pricing_data.txt"
+    local ss = stringStream ""
+
+    format "{" to:ss
+
+    format "\"chapas\":[" to:ss
+    for i = 1 to chapasArr.count do
+    (
+        local c = chapasArr[i]
+        -- c = #(espessura_mm, produto, quantidade, valor_unit, subtotal)
+        format "{\"esp\":%,\"qty\":%,\"price\":%,\"w\":%,\"h\":%}" c[1] c[3] c[4] wMm hMm to:ss
+        if i < chapasArr.count do format "," to:ss
+    )
+    format "]," to:ss
+
+    format "\"pecas\":[" to:ss
+    for i = 1 to piecesData.count do
+    (
+        local p = piecesData[i]
+        local compMm = p.comp * 25.4
+        local largMm = p.larg * 25.4
+        local espMm  = p.esp  * 25.4
+        format "{\"nome\":\"%\",\"comp\":%,\"larg\":%,\"esp\":%,\"fita_m\":0}" \
+            (substituteString p.nome "\"" "'") compMm largMm espMm to:ss
+        if i < piecesData.count do format "," to:ss
+    )
+    format "]," to:ss
+
+    format "\"fitas\":[" to:ss
+    for i = 1 to fitasMultiLinhas.count do
+    (
+        local ft = fitasMultiLinhas[i]
+        local metros = try (ft[2] as float) catch 0.0
+        local valM   = try (ft[3] as float) catch 0.0
+        local roloM  = try (ft[4] as float) catch 50.0
+        format "{\"nome\":\"%\",\"metros\":%,\"valor_m\":%,\"rolo_m\":%}" \
+            (substituteString ft[1] "\"" "'") metros valM roloM to:ss
+        if i < fitasMultiLinhas.count do format "," to:ss
+    )
+    format "]," to:ss
+
+    format "\"price_ferragem\":%," priceFerragem to:ss
+    format "\"price_cola\":%," priceCola to:ss
+    format "\"price_frete\":%," priceFrete to:ss
+    format "\"price_mao_obra\":%," priceMaoObra to:ss
+    format "\"mao_obra_manual\":%," (if moManual then "true" else "false") to:ss
+    format "\"margem_pct\":%," margemPct to:ss
+    format "\"imposto_pct\":%," impostoPct to:ss
+    format "\"comissao_pct\":%," comissaoPct to:ss
+    format "\"desconto_global\":%," descontoGlobal to:ss
+    format "\"aproveitamento_pct\":%" aprovPct to:ss
+    format "}" to:ss
+
+    local fOut = openFile pricingFile mode:"wt"
+    if fOut == undefined do return #(false, "Erro ao criar arquivo temporario")
+    format "%" (ss as string) to:fOut
+    close fOut
+
+    if not (apiWriteCmd "calcular_precificacao") do return #(false, "Erro ao escrever comando")
+    local res = apiExecute()
+    if res.count < 2 or res[1] != "OK" do
+    (
+        local msg = if res.count >= 2 then res[2] else "Sem resposta da API"
+        return #(false, msg)
+    )
+
+    local tok = filterString res[2] "|"
+    if tok.count < 13 do return #(false, "Resposta incompleta da API")
+
+    local warnings = #()
+    for k = 3 to res.count do append warnings res[k]
+
+    #(true, #(
+        try (tok[1]  as float) catch 0.0,    -- cmc
+        try (tok[2]  as float) catch 0.0,    -- cob
+        try (tok[3]  as float) catch 0.0,    -- preco_venda (PV bruto)
+        try (tok[4]  as float) catch 0.0,    -- total_com_desc (PV final)
+        try (tok[5]  as float) catch 0.0,    -- desconto_valor
+        try (tok[6]  as float) catch 0.0,    -- price_mo
+        (tok[7] == "True"),                  -- mo_auto
+        (tok[8] == "True"),                  -- abaixo_custo
+        try (tok[9]  as float) catch 0.0,    -- total_aquisicao (CA Total)
+        try (tok[10] as float) catch 0.0,    -- custo_chapas
+        try (tok[11] as float) catch 0.0,    -- custo_fita (consumo, CMC)
+        try (tok[12] as float) catch 0.0,    -- custo_fita_aq (rolos, CA)
+        try (tok[13] as integer) catch 0,    -- nr_rolos
+        warnings
+    ))
+)
+
+-- ============================================================
 -- API: Buscar cliente por ID — retorna #(nome, doc, tel, email, cid, uf) ou #()
 -- ============================================================
 fn apiGetCliente clienteId =
@@ -3359,6 +3467,33 @@ fn abrirUICustoCompleto nChapas aproveitamento fitaMetros =
             -- CA Total para referencia interna (aquisicao sem MO)
             local caTotal  = caChapas + caFitas + totalFerr + cola + frete
 
+            -- ── API como fonte oficial do calculo monetario (v10) ──
+            -- Recalcula CMC/COB/PV/PV-final via pricing_service; em caso de
+            -- falha/offline mantem os valores calculados localmente acima.
+            if G_ApiOnline do
+            (
+                local wMm = G_MainConfig[1] * 25.4
+                local hMm = G_MainConfig[2] * 25.4
+                local priceMoApi  = if moManualFinal then maoObra else 0.0
+                local resPrc = ::apiCalcularPrecificacao chapasArr wMm hMm G_PiecesData ::G_FitasMultiLinhas \
+                    totalFerr cola frete priceMoApi moManualFinal margem imposto comissao desconto G_CustoAprovArred
+                if resPrc[1] then
+                (
+                    local pr = resPrc[2]
+                    cmc      = pr[1]
+                    cob      = pr[2]
+                    pv       = pr[3]
+                    pvFinal  = pr[4]
+                    maoObra  = pr[6]
+                    cmcFitas = pr[11]
+                    caFitas  = pr[12]
+                    caTotal  = pr[9]
+                    for w in pr[14] do ::apiAppendLog "maxscript_api_errors.log" ("Precificacao: " + w)
+                )
+                else
+                    ::apiAppendLog "maxscript_api_errors.log" ("apiCalcularPrecificacao falhou, usando calculo local: " + resPrc[2])
+            )
+
             -- Trava de margem minima: desconto nao pode levar o preco abaixo do custo
             if pvFinal < cob do
             (
@@ -4807,7 +4942,7 @@ fn abrirCotacoes =
         -- Pecas tab
         local gridPecas
         -- Editar Pecas tab
-        local gridEditPecas, lbPecasTotalM2, btnSalvarPecas, btnRestaurarPecas, btnGerarPlanoPecas, lbPecasSalvStatus
+        local gridEditPecas, lbPecasTotalM2, btnSalvarPecas, btnRestaurarPecas, lbPecasSalvStatus
         -- Editar tab — campos basicos
         local txtEditProj, txtEditEntrega, txtEditObs, txtEditDesc, btnSalvarEdit, lbSalvoStatus
         -- Editar tab — fitas, ferragens, outros
@@ -5082,200 +5217,10 @@ fn abrirCotacoes =
             try ( lbPecasTotalM2.Text = "Total M² consumido: " + totStr + " m²" ) catch()
         )
 
-        fn parseHistFloatText value defaultVal =
-        (
-            local raw = if value == undefined then "" else (value as string)
-            raw = substituteString raw "," "."
-            raw = substituteString raw "R$" ""
-            raw = substituteString raw " " ""
-            local v = defaultVal
-            try ( v = raw as float ) catch ( v = defaultVal )
-            v
-        )
-
-        fn onlyNumberChars txt =
-        (
-            local out = ""
-            local s = txt as string
-            for i = 1 to s.count do
-            (
-                local ch = s[i] as string
-                if (findString "0123456789.," ch) != undefined do out += ch
-            )
-            substituteString out "," "."
-        )
-
-        fn chapaDimsMmFromProduto produto =
-        (
-            local s = produto as string
-            s = substituteString s "×" "x"
-            s = substituteString s "X" "x"
-            s = substituteString s "*" "x"
-            local tokens = filterString s " "
-            for tk in tokens do
-            (
-                if (findString tk "x") != undefined do
-                (
-                    local parts = filterString tk "x"
-                    if parts.count >= 2 do
-                    (
-                        local maior = 0.0
-                        local segundo = 0.0
-                        for p in parts do
-                        (
-                            local n = 0.0
-                            try ( n = (onlyNumberChars p) as float ) catch ( n = 0.0 )
-                            if n > 100.0 do
-                            (
-                                if n > maior then
-                                (
-                                    segundo = maior
-                                    maior = n
-                                )
-                                else if n > segundo do segundo = n
-                            )
-                        )
-                        if maior > 0.0 and segundo > 0.0 do return #(segundo, maior)
-                    )
-                )
-            )
-            #(1830.0, 2750.0)
-        )
-
-        fn chapaAreaM2FromProduto produto =
-        (
-            local dims = chapaDimsMmFromProduto produto
-            if dims.count >= 2 then ((dims[1] / 1000.0) * (dims[2] / 1000.0)) else 0.0
-        )
-
-        fn gerarPlanoPecasHistorico =
-        (
-            if G_CotId <= 0 do
-            (
-                try ( lbPecasSalvStatus.Text = "Selecione uma cotacao primeiro." ) catch()
-                return undefined
-            )
-            if gridEditPecas == undefined do
-            (
-                try ( lbPecasSalvStatus.Text = "Grade de pecas indisponivel." ) catch()
-                return undefined
-            )
-            if gridEditPecas.Rows.Count == 0 do
-            (
-                try ( lbPecasSalvStatus.Text = "Nenhuma peca para gerar plano." ) catch()
-                return undefined
-            )
-            try ( gridEditPecas.EndEdit() ) catch()
-
-            local itens = undefined
-            try ( itens = ::apiGetCotacaoItems G_CotId ) catch()
-            local chapasCot = if itens != undefined and itens.count >= 1 then itens[1] else #()
-            local dimsChapa = if chapasCot.count > 0 then (chapaDimsMmFromProduto chapasCot[1][2]) else #(1830.0, 2750.0)
-
-            G_MainConfig      = #(dimsChapa[1] / 25.4, dimsChapa[2] / 25.4, 5.0 / 25.4, 15.0 / 25.4, false, 1, 1)
-            G_PiecesData      = #()
-            G_OriginalDims    = #()
-            G_TotalFitaMetros = 0.0
-
-            local criadas = 0
-            for r = 0 to (gridEditPecas.Rows.Count - 1) do
-            (
-                local rw = gridEditPecas.Rows.Item[r]
-                local nome  = try (rw.Cells.Item[0].Value as string) catch ""
-                local cMm   = parseHistFloatText rw.Cells.Item[1].Value 0.0
-                local lMm   = parseHistFloatText rw.Cells.Item[2].Value 0.0
-                local espMm = parseHistFloatText rw.Cells.Item[3].Value 0.0
-                local qtd   = try (rw.Cells.Item[4].Value as integer) catch 1
-                if qtd < 1 do qtd = 1
-                if nome == "" do nome = "Peca"
-
-                if cMm <= 0.0 or lMm <= 0.0 or espMm <= 0.0 do
-                (
-                    messageBox ("Medida invalida na linha " + ((r + 1) as string) + ".") title:"Plano de Corte"
-                    return undefined
-                )
-
-                local cSys = cMm / 25.4
-                local lSys = lMm / 25.4
-                local eSys = espMm / 25.4
-                for q = 1 to qtd do
-                (
-                    local obj = Box width:cSys length:lSys height:eSys isSelected:false
-                    obj.name = nome + "_HIST_MED"
-                    obj.pos = [0,0,0]
-                    obj.isHidden = false
-                    append G_PiecesData (PieceObj node:obj nome:nome comp:cSys larg:lSys esp:eSys \
-                        c1:(try (rw.Cells.Item[5].Value as booleanClass) catch false) \
-                        c2:(try (rw.Cells.Item[6].Value as booleanClass) catch false) \
-                        l1:(try (rw.Cells.Item[7].Value as booleanClass) catch false) \
-                        l2:(try (rw.Cells.Item[8].Value as booleanClass) catch false))
-                    criadas += 1
-                )
-            )
-
-            if criadas == 0 do
-            (
-                try ( lbPecasSalvStatus.Text = "Nenhuma peca valida para gerar plano." ) catch()
-                return undefined
-            )
-            try ( lbPecasSalvStatus.Text = "Gerando plano de corte..." ) catch()
-            executarMotorDeCorte()
-            try ( lbPecasSalvStatus.Text = "Plano de corte gerado a partir do historico." ) catch()
-        )
-
-        fn valorM2PorEsp chapas espMm =
-        (
-            for ch in chapas do
-            (
-                if abs(ch[1] - espMm) < 0.5 do
-                (
-                    local areaChapa = chapaAreaM2FromProduto ch[2]
-                    local valorUnit = try (ch[4] as float) catch 0.0
-                    if areaChapa > 0.0 and valorUnit > 0.0 do return (valorUnit / areaChapa)
-                )
-            )
-            0.0
-        )
-
         -- Serializa gridEditPecas de volta para JSON (mesmo formato de buildPecasJson)
         fn serializePecasGrid =
         (
             if gridEditPecas == undefined do return "[]"
-            local chapasCot = #()
-            local itens = undefined
-            try ( itens = ::apiGetCotacaoItems G_CotId ) catch()
-            if itens != undefined and itens.count >= 1 do chapasCot = itens[1]
-
-            local baseMatTotal = 0.0
-            for r = 0 to (gridEditPecas.Rows.Count - 1) do
-            (
-                local rwBase = gridEditPecas.Rows.Item[r]
-                local cBase = parseHistFloatText rwBase.Cells.Item[1].Value 0.0
-                local lBase = parseHistFloatText rwBase.Cells.Item[2].Value 0.0
-                local espBase = parseHistFloatText rwBase.Cells.Item[3].Value 0.0
-                local qtdBase = try (rwBase.Cells.Item[4].Value as integer) catch 1
-                if qtdBase < 1 do qtdBase = 1
-                local valorM2Base = valorM2PorEsp chapasCot espBase
-                baseMatTotal += ((cBase / 1000.0) * (lBase / 1000.0) * qtdBase * valorM2Base)
-            )
-
-            local cotCarregada = if G_CotDados != undefined then G_CotDados[1] else undefined
-            local cpChapas = if cotCarregada != undefined and cotCarregada.count >= 17 \
-                             then (try (cotCarregada[17] as float) catch 0.0) else 0.0
-            if cpChapas == 0.0 do
-            (
-                local oldCmc = if cotCarregada != undefined and cotCarregada.count >= 23 \
-                               then (try (cotCarregada[23] as float) catch 0.0) else 0.0
-                local oldCpFitas = if cotCarregada != undefined and cotCarregada.count >= 18 \
-                                   then (try (cotCarregada[18] as float) catch 0.0) else 0.0
-                cpChapas = oldCmc - oldCpFitas
-                if cpChapas < 0.0 do cpChapas = 0.0
-            )
-            local fatorCusto = if baseMatTotal > 0.0 and cpChapas > 0.0 then (cpChapas / baseMatTotal) \
-                               else (1.0 + (try (::G_MO_KPerdaSeguranca as float) catch 0.10))
-            if fatorCusto < 1.0 do fatorCusto = 1.0
-            if fatorCusto > 2.0 do fatorCusto = 2.0
-
             local ss = stringStream ""
             format "[" to:ss
             local nRows = gridEditPecas.Rows.Count
@@ -5284,9 +5229,9 @@ fn abrirCotacoes =
             (
                 local rw = gridEditPecas.Rows.Item[r]
                 local nome  = try (rw.Cells.Item[0].Value as string) catch ""
-                local cMm   = parseHistFloatText rw.Cells.Item[1].Value 0.0
-                local lMm   = parseHistFloatText rw.Cells.Item[2].Value 0.0
-                local espMm = parseHistFloatText rw.Cells.Item[3].Value 0.0
+                local cMm   = try (rw.Cells.Item[1].Value as float) catch 0.0
+                local lMm   = try (rw.Cells.Item[2].Value as float) catch 0.0
+                local espMm = try (rw.Cells.Item[3].Value as float) catch 0.0
                 local qtd   = try (rw.Cells.Item[4].Value as integer) catch 1
                 if qtd < 1 do qtd = 1
                 local fitaC1 = try (rw.Cells.Item[5].Value as booleanClass) catch false
@@ -5300,16 +5245,12 @@ fn abrirCotacoes =
                 if fitaC2 do fitaM += cMm / 1000.0
                 if fitaL1 do fitaM += lMm / 1000.0
                 if fitaL2 do fitaM += lMm / 1000.0
-                local valorM2 = valorM2PorEsp chapasCot espMm
-                local custoUnit = aUnit * valorM2 * fatorCusto
-                local custoTotal = custoUnit * qtd
                 local nomeSafe = substituteString nome "\"" "'"
                 if wrote > 0 do format "," to:ss
-                format "{\"nome\":\"%\",\"comp_mm\":%,\"larg_mm\":%,\"esp_mm\":%,\"qtd\":%,\"area_m2\":%,\"fita_m\":%,\"fita_c1\":%,\"fita_c2\":%,\"fita_l1\":%,\"fita_l2\":%,\"preco_m2\":%,\"custo_unit\":%,\"custo_total\":%}" \
+                format "{\"nome\":\"%\",\"comp_mm\":%,\"larg_mm\":%,\"esp_mm\":%,\"qtd\":%,\"area_m2\":%,\"fita_m\":%,\"fita_c1\":%,\"fita_c2\":%,\"fita_l1\":%,\"fita_l2\":%,\"preco_m2\":0,\"custo_unit\":0,\"custo_total\":0}" \
                     nomeSafe cMm lMm espMm qtd aUnit fitaM \
                     (if fitaC1 then "true" else "false") (if fitaC2 then "true" else "false") \
-                    (if fitaL1 then "true" else "false") (if fitaL2 then "true" else "false") \
-                    valorM2 custoUnit custoTotal to:ss
+                    (if fitaL1 then "true" else "false") (if fitaL2 then "true" else "false") to:ss
                 wrote += 1
             )
             format "]" to:ss
@@ -6056,7 +5997,6 @@ fn abrirCotacoes =
             gridEditPecas.AllowUserToAddRows    = false
             gridEditPecas.AllowUserToDeleteRows = false
             gridEditPecas.MultiSelect           = false
-            gridEditPecas.ReadOnly              = false
             gridEditPecas.EditMode = (dotNetClass "System.Windows.Forms.DataGridViewEditMode").EditOnKeystrokeOrF2
             gridEditPecas.SelectionMode = (dotNetClass "System.Windows.Forms.DataGridViewSelectionMode").CellSelect
 
@@ -6089,12 +6029,6 @@ fn abrirCotacoes =
 
             tabEditPecas.Controls.Add gridEditPecas
             styleGrid gridEditPecas fillCols:true
-            try ( gridEditPecas.ReadOnly = false ) catch()
-            try (
-                for ci = 0 to 8 do gridEditPecas.Columns.Item[ci].ReadOnly = false
-                gridEditPecas.Columns.Item[9].ReadOnly = true
-                gridEditPecas.Columns.Item[10].ReadOnly = true
-            ) catch()
 
             -- Destaca colunas calculadas (read-only) com fundo suave
             try (
@@ -6119,12 +6053,9 @@ fn abrirCotacoes =
             local gap  = 10
             local bx2  = TW - MGN - btnW           -- Salvar (primario) na borda direita
             local bx1  = bx2 - gap - btnW          -- Restaurar a esquerda dele
-            local bx0  = bx1 - gap - btnW          -- Gerar plano
             btnRestaurarPecas = addBtn tabEditPecas "Restaurar Original" bx1 footY btnW 30
             btnSalvarPecas    = addBtn tabEditPecas "Salvar Alteracoes"  bx2 footY btnW 30
-            btnGerarPlanoPecas = addBtn tabEditPecas "Gerar Plano"        bx0 footY btnW 30
             try ( ::pintarBotaoProximo btnSalvarPecas ) catch()
-            try ( ::pintarBotaoAtualizar btnGerarPlanoPecas ) catch()
             -- Status abaixo, alinhado ao total
             lbPecasSalvStatus = addLbl tabEditPecas "" MGN (footY + 34) (TW - MGN*2) 18
             try ( lbPecasSalvStatus.ForeColor = (dotNetClass "System.Drawing.Color").FromArgb 90 96 104 ) catch()
@@ -6146,10 +6077,8 @@ fn abrirCotacoes =
             dotNet.addEventHandler btnSalvarEdit "Click" (fn s a = salvarEdicao())
 
             -- Aba Editar Pecas — recalcular area ao editar celula
-            dotNet.addEventHandler gridEditPecas "CellBeginEdit" (fn s a = ( enableAccelerators = false ))
             dotNet.addEventHandler gridEditPecas "CellEndEdit" (fn s a =
             (
-                enableAccelerators = true
                 try (
                     recalcPecasRow a.RowIndex
                     recalcPecasTotal()
@@ -6222,10 +6151,6 @@ fn abrirCotacoes =
                 )
                 else
                     try ( lbPecasSalvStatus.Text = "Erro ao salvar: " + (if res.count >= 2 then res[2] else "?") ) catch()
-            ))
-            dotNet.addEventHandler btnGerarPlanoPecas "Click" (fn s a =
-            (
-                gerarPlanoPecasHistorico()
             ))
             dotNet.addEventHandler btnRestaurarPecas "Click" (fn s a =
             (

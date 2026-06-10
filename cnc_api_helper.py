@@ -1,5 +1,5 @@
 """
-cnc_api_helper.py — Bridge MaxScript ↔ API Gasômetro
+cnc_api_helper.py — Bridge MaxScript ↔ API GausWoods
 Lê cnc_api_cmd.txt no temp dir, executa a chamada REST e
 escreve o resultado em cnc_api_result.txt.
 
@@ -32,6 +32,7 @@ TMP          = tempfile.gettempdir()
 CMD_FILE     = os.path.join(TMP, "cnc_api_cmd.txt")
 RESULT_FILE  = os.path.join(TMP, "cnc_api_result.txt")
 COTACAO_FILE = os.path.join(TMP, "cnc_cotacao_data.txt")
+PRICING_FILE = os.path.join(TMP, "cnc_pricing_data.txt")
 CLIENT_FILE  = os.path.join(TMP, "cnc_cliente_data.txt")
 DEBUG_FILE   = os.path.join(TMP, "cnc_api_debug.txt")
 LOG_DIR      = os.path.join(os.path.dirname(__file__), "DADOS", "logs")
@@ -1062,26 +1063,60 @@ def handle_update_cotacao(params_raw: list):
                   str(r.get("desconto_global", 0))])
 
 
-def _pv_divisor(cob, margem_pct, imposto_pct=0.0, comissao_pct=0.0):
-    """Modelo v10: PV = COB / (1 - (margem + imposto + comissão)/100) — markup divisor.
+try:
+    _api_path = os.path.join(os.path.dirname(__file__), "DADOS", "api")
+    if _api_path not in sys.path:
+        sys.path.insert(0, _api_path)
+    from gauswoodsquote.pricing import pv_divisor as _pv_divisor, pv_com_desconto, abaixo_custo
+except ImportError:
+    def _pv_divisor(cob, margem_pct, imposto_pct=0.0, comissao_pct=0.0):
+        if cob <= 0:
+            return 0.0
+        soma = min(margem_pct + imposto_pct + comissao_pct, 95.0)
+        return cob / (1.0 - soma / 100.0)
+    def pv_com_desconto(pv_bruto, desconto_pct):
+        if pv_bruto <= 0 or desconto_pct <= 0:
+            return pv_bruto
+        return pv_bruto * (1.0 - desconto_pct / 100.0)
+    def abaixo_custo(pv_final, cob, tolerancia=0.005):
+        return pv_final < cob - tolerancia
 
-    Margem, imposto e comissão são percentuais POR DENTRO do preço de venda.
-    Equivale ao antigo COB×(1+margem) apenas quando imposto=comissão=0 e a
-    margem é entendida sobre o custo; aqui a margem é sobre a venda.
+
+def _pricing_from_row(r, cob_val, margem_pct, imposto_pct, comissao_pct, desc_pct):
+    """Preco de venda bruto/final + flag abaixo_custo para uma cotacao.
+
+    Preferencia: pricing_snapshot_json — congelado pela API (pricing_service)
+    no momento da criacao/edicao da cotacao, e a fonte oficial do calculo
+    monetario (PV nao deve ser recalculado com formulas que podem ter mudado
+    desde entao). Fallback: recalcula via _pv_divisor/pv_com_desconto para
+    cotacoes antigas sem snapshot.
     """
-    if cob <= 0:
-        return 0.0
-    soma = min(margem_pct + imposto_pct + comissao_pct, 95.0)
-    return cob / (1.0 - soma / 100.0)
+    raw = r.get("pricing_snapshot_json")
+    if raw:
+        try:
+            snap = json.loads(raw) if isinstance(raw, str) else raw
+            pv_bruto = float(snap.get("preco_venda_bruto", 0) or 0)
+            if pv_bruto > 0:
+                pv_final = float(snap.get("preco_venda_final", 0) or 0)
+                abaixo   = bool(snap.get("abaixo_custo", False))
+                return pv_bruto, pv_final, abaixo
+        except Exception:
+            pass
+    pv_bruto = _pv_divisor(cob_val, margem_pct, imposto_pct, comissao_pct)
+    pv_final = pv_com_desconto(pv_bruto, desc_pct) if pv_bruto > 0 else 0.0
+    abaixo   = abaixo_custo(pv_final, cob_val) if cob_val > 0 else False
+    return pv_bruto, pv_final, abaixo
 
 
 def _html_analise_custo(cmc, cob, margem_pct, pv_final, ca, mo, custo_aq_legacy, custo_pr_legacy, brl,
-                        desc_pct=0.0, imposto_pct=0.0, comissao_pct=0.0):
+                        desc_pct=0.0, imposto_pct=0.0, comissao_pct=0.0,
+                        pv_bruto=None, pv_cliente=None):
     """Gera o bloco HTML de Análise de Custo para o modelo CMC + Markup divisor (v10).
     Fallback automático para cotações antigas (sem os campos v9/v10).
 
-    - pv_final do DB pode estar desatualizado (salvo com COB/margem antigos).
-      PV é SEMPRE recalculado aqui como COB / (1 - (margem+imposto+comissão)/100).
+    - pv_bruto/pv_cliente: valores oficiais (de pricing_snapshot_json via
+      _pricing_from_row); se nao informados, recalculados aqui a partir do
+      COB e percentuais atuais.
     - COB = CMC + MO + custos diretos adicionais (ferragens, cola, frete).
       Quando há delta significativo, mostramos o breakdown para transparência.
     - desc_pct: desconto global da cotação, aplicado ao PV calculado.
@@ -1090,9 +1125,10 @@ def _html_analise_custo(cmc, cob, margem_pct, pv_final, ca, mo, custo_aq_legacy,
     is_v9 = cmc > 0 or cob > 0
 
     if is_v9:
-        # Recalcular PV a partir do COB e percentuais atuais (nunca usar pv_final do DB)
-        pv_bruto   = _pv_divisor(cob, margem_pct, imposto_pct, comissao_pct)
-        pv_cliente = pv_bruto * (1 - desc_pct / 100) if desc_pct > 0 else pv_bruto
+        if pv_bruto is None:
+            pv_bruto = _pv_divisor(cob, margem_pct, imposto_pct, comissao_pct)
+        if pv_cliente is None:
+            pv_cliente = pv_bruto * (1 - desc_pct / 100) if desc_pct > 0 else pv_bruto
 
         # Breakdown do COB: delta entre COB e CMC+MO = custos diretos (ferragens, frete, cola…)
         custos_diretos = cob - cmc - mo
@@ -1233,8 +1269,10 @@ def handle_export_cotacao_html(params_raw: list):
     pv_final  = float(r.get("preco_venda_final",        0) or 0)
     imposto_pct  = float(r.get("imposto_pct",  0) or 0)
     comissao_pct = float(r.get("comissao_pct", 0) or 0)
-    # PV v10 recalculado (divisor) — usado no total-box e na análise de custo
-    pv_bruto_v10 = _pv_divisor(cob_val, margem_pct, imposto_pct, comissao_pct)
+    # PV v10 — usado no total-box e na análise de custo. Vem do snapshot
+    # oficial (pricing_snapshot_json) quando disponível; senão recalculado.
+    pv_bruto_v10, pv_final_v10, abaixo_custo_flag = _pricing_from_row(
+        r, cob_val, margem_pct, imposto_pct, comissao_pct, desc_pct)
     # fallback para campos legacy quando ainda nao migrado
     custo_aq  = ca_total  if ca_total  > 0 else float(r.get("custo_efetivo_geral", 0) or 0)
     custo_pr  = cmc_val   if cmc_val   > 0 else float(r.get("custo_produto_geral",  0) or 0)
@@ -1430,12 +1468,12 @@ def handle_export_cotacao_html(params_raw: list):
 
 <div class="total-box">
   {(lambda: (
-      # Modelo v10: PV por markup divisor, nunca do campo stale do DB
-      "PREÇO DE VENDA FINAL: " + brl(pv_bruto_v10 * (1 - desc_pct/100))
+      # Modelo v10: PV do snapshot oficial (pricing_snapshot_json), nunca recalculado
+      "PREÇO DE VENDA FINAL: " + brl(pv_final_v10)
       if desc_pct == 0 else
       "Preço bruto: " + brl(pv_bruto_v10) + "<br>"
-      + "Desconto " + f"{desc_pct:.1f}%: -" + brl(pv_bruto_v10 * desc_pct/100) + "<br>"
-      + "PREÇO AO CLIENTE: " + brl(pv_bruto_v10 * (1 - desc_pct/100))
+      + "Desconto " + f"{desc_pct:.1f}%: -" + brl(pv_bruto_v10 - pv_final_v10) + "<br>"
+      + "PREÇO AO CLIENTE: " + brl(pv_final_v10)
   ) if cob_val > 0 else (
       # Cotações antigas: usar subtotal itemizado
       ("Subtotal: " + brl(subtotal) + "<br>")
@@ -1443,8 +1481,9 @@ def handle_export_cotacao_html(params_raw: list):
       + "TOTAL GERAL: " + brl(total)
   ))()}
 </div>
+{"<p style='color:#b00020;font-weight:bold;font-size:11px;margin-top:6px'>ATENÇÃO: o preço final está abaixo do custo operacional (COB).</p>" if abaixo_custo_flag else ""}
 
-{_html_analise_custo(cmc_val, cob_val, margem_pct, pv_final, ca_display, mao_obra_val, custo_aq, custo_pr, brl, desc_pct=desc_pct, imposto_pct=imposto_pct, comissao_pct=comissao_pct)}
+{_html_analise_custo(cmc_val, cob_val, margem_pct, pv_final, ca_display, mao_obra_val, custo_aq, custo_pr, brl, desc_pct=desc_pct, imposto_pct=imposto_pct, comissao_pct=comissao_pct, pv_bruto=pv_bruto_v10 if cob_val > 0 else None, pv_cliente=pv_final_v10 if cob_val > 0 else None)}
 
 <p style="color:#999; font-size:10px; margin-top:20px">
   Gerado automaticamente pelo CNC Cut Plan Optimizer Gaus Woods · {datetime.now().strftime('%d/%m/%Y %H:%M')}
@@ -1535,8 +1574,8 @@ def handle_export_proposta_cliente_html(params_raw: list):
     # ── Preço ───────────────────────────────────────────────────────────────
     def brl(v): return f"R$ {float(v):,.2f}".replace(",","X").replace(".",",").replace("X",".")
     if cob_val > 0 and margem_pct > 0:
-        pv_bruto   = _pv_divisor(cob_val, margem_pct, imposto_pct, comissao_pct)
-        pv_cliente = pv_bruto * (1 - desc_pct / 100) if desc_pct > 0 else pv_bruto
+        pv_bruto, pv_cliente, _ = _pricing_from_row(
+            r, cob_val, margem_pct, imposto_pct, comissao_pct, desc_pct)
     else:
         tot_ch  = float(r.get("total_chapas", 0) or 0)
         tot_ft  = sum(round(float(f.get("metros_total",0))*float(f.get("valor_m",0)),2) for f in fitas) if fitas else float(r.get("total_fitas",0) or 0)
@@ -2188,6 +2227,45 @@ def handle_create_cotacao():
     ])
 
 
+def handle_calcular_precificacao():
+    """
+    Le cnc_pricing_data.txt (JSON, schema PricingInput) e faz POST
+    /cotacoes/pricing/calcular. Devolve os totais (CMC/COB/PV/etc.)
+    em uma linha pipe-delimited e os warnings nas linhas seguintes.
+
+    Usado pelo MaxScript para que o calculo de precificacao tenha a API
+    como fonte oficial; em caso de falha o MaxScript cai para o calculo
+    local (mesma formula, replicada de gauswoodsquote.pricing).
+    """
+    if not os.path.exists(PRICING_FILE):
+        write_result(["FAIL", "Arquivo de dados de precificacao nao encontrado"]); return
+
+    try:
+        with open(PRICING_FILE, "r", encoding="utf-8") as f:
+            raw = f.read()
+    except UnicodeDecodeError:
+        with open(PRICING_FILE, "r", encoding="cp1252") as f:
+            raw = f.read()
+
+    try:
+        payload = json.loads(raw)
+    except Exception as e:
+        write_result(["FAIL", f"JSON invalido: {e}"]); return
+
+    r = _post("/cotacoes/pricing/calcular", payload)
+    if not r:
+        write_result(["FAIL", "Erro ao calcular precificacao na API"]); return
+
+    lines = ["OK", "|".join(str(r.get(k, "")) for k in [
+        "cmc", "cob", "preco_venda", "total_com_desc", "desconto_valor",
+        "price_mo", "mo_auto", "abaixo_custo", "total_aquisicao",
+        "custo_chapas", "custo_fita", "custo_fita_aq", "nr_rolos",
+    ])]
+    for w in r.get("warnings", []):
+        lines.append(str(w))
+    write_result(lines)
+
+
 # ---------------------------------------------------------------------------
 # dispatcher
 # ---------------------------------------------------------------------------
@@ -2217,6 +2295,7 @@ def main():
         "update_cotacao":            lambda: handle_update_cotacao(params),
         "update_cotacao_full":       lambda: handle_update_cotacao_full(),
         "update_desconto_cotacao":   lambda: handle_update_desconto_cotacao(params),
+        "calcular_precificacao":     lambda: handle_calcular_precificacao(),
         "export_cotacao_html":            lambda: handle_export_cotacao_html(params),
         "export_proposta_cliente_html":   lambda: handle_export_proposta_cliente_html(params),
     }

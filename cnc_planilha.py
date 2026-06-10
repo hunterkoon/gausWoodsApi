@@ -13,6 +13,28 @@ import subprocess
 import importlib
 from datetime import datetime
 
+try:
+    _api_path = os.path.join(os.path.dirname(__file__), "DADOS", "api")
+    if _api_path not in sys.path:
+        sys.path.insert(0, _api_path)
+    from gauswoodsquote.pricing import pv_divisor as _pv_divisor, pv_com_desconto, abaixo_custo, calcular_mao_obra
+except ImportError:
+    def _pv_divisor(cob, margem_pct, imposto_pct=0.0, comissao_pct=0.0):
+        if cob <= 0:
+            return 0.0
+        soma = min(margem_pct + imposto_pct + comissao_pct, 95.0)
+        return cob / (1.0 - soma / 100.0)
+    def pv_com_desconto(pv_bruto, desconto_pct):
+        if pv_bruto <= 0 or desconto_pct <= 0:
+            return pv_bruto
+        return pv_bruto * (1.0 - desconto_pct / 100.0)
+    def abaixo_custo(pv_final, cob, tolerancia=0.005):
+        return pv_final < cob - tolerancia
+    def calcular_mao_obra(n_pecas, area_total_m2, tempo_medio_peca_min=12.0, valor_hora=45.0):
+        if n_pecas <= 0:
+            return 0.0
+        return round((n_pecas * tempo_medio_peca_min) / 60.0 * valor_hora, 2)
+
 TEMP_DIR  = os.environ.get("TEMP", os.environ.get("TMP", "/tmp"))
 DATA_FILE = os.path.join(TEMP_DIR, "cnc_planilha_data.txt")
 
@@ -138,13 +160,15 @@ def calcular(meta, chapas, pecas):
         pecas_out.append({**p, "area_m2": round(area_p, 6),
                           "mat": mat, "fita_cost": fita, "subtotal": round(mat + fita, 4)})
 
-    # Rateio físico: ferragem proporcional à ÁREA da peça; cola proporcional à FITA aplicada
-    # (antes era proporcional ao custo do material, sem relação física com o insumo)
+    # Rateio físico: ferragem proporcional à ÁREA da peça; cola proporcional à FITA aplicada.
+    # Futuramente, quando ferragens por peça estiverem no input, usar alocação direta.
     n_pecas = max(len(pecas_out), 1)
     for p in pecas_out:
         frac_area = (p["area_m2"] / total_area) if total_area > 0 else (1.0 / n_pecas)
         frac_fita = (p["fita_m"] / total_fita_m) if total_fita_m > 0 else frac_area
-        p["outros"] = round(price_ferr * frac_area + price_cola * frac_fita, 4)
+        p["ferr_rateio"] = round(price_ferr * frac_area, 4)
+        p["cola_rateio"] = round(price_cola * frac_fita, 4)
+        p["outros"] = round(p["ferr_rateio"] + p["cola_rateio"], 4)
         p["total"]  = round(p["subtotal"] + p["outros"], 4)
 
     custo_chapas      = sum(c["custo_base"] for c in chapas_out)
@@ -163,21 +187,45 @@ def calcular(meta, chapas, pecas):
     total_aquisicao = round(custo_chapas + custo_fita_aq + price_ferr + price_cola + price_frete, 2)
     total_geral     = total_aquisicao   # alias mantido para compatibilidade
 
-    # CMC (material consumido) e COB (custo operacional base)
-    # Fallback aplica a perda real do plano de corte (derivada do aproveitamento do MAXRECTS)
-    aprov = float(meta.get("aproveitamento_pct", 0) or 0)
-    k_perda = min(max(100.0 / aprov - 1.0, 0.0), 1.0) if aprov > 1.0 else 0.10
-    cmc = custo_prod_geral if custo_prod_geral > 0 else round(total_mat * (1.0 + k_perda) + custo_fita, 2)
-    cob = cob_meta if cob_meta > 0 else round(cmc + price_ferr + price_cola + price_frete + price_mo, 2)
+    # Mao de obra automatica: quando nao informada, calcula por n_pecas
+    mo_manual = str(meta.get("mao_obra_manual", "false")).lower() == "true"
+    if price_mo <= 0 and not mo_manual and len(pecas_out) > 0:
+        price_mo = calcular_mao_obra(len(pecas_out), total_area)
+        warnings_mo_auto = True
+    else:
+        warnings_mo_auto = False
 
-    # Preço de venda por markup divisor: margem/imposto/comissão por dentro do preço
-    soma_pct = min(margem_pct + imposto_pct + comissao_pct, 95.0)
-    pv = pv_meta if pv_meta > 0 else round(cob / (1.0 - soma_pct / 100.0), 2)
+    # CMC (material consumido) e COB (custo operacional base)
+    aprov = float(meta.get("aproveitamento_pct", 0) or 0)
+    k_perda = min(max(100.0 / aprov - 1.0, 0.0), 2.0) if aprov > 1.0 else 0.10
+    warnings = []
+    if aprov > 0 and aprov < 50:
+        warnings.append(f"Aproveitamento muito baixo ({aprov:.1f}%) — k_perda={k_perda:.2f}")
+    if warnings_mo_auto:
+        warnings.append(f"Mão de obra calculada automaticamente: R$ {price_mo:.2f} ({len(pecas_out)} peças x 12min x R$45/h)")
+
+    cmc_calc = round(total_mat * (1.0 + k_perda) + custo_fita, 2)
+    if custo_prod_geral > 0:
+        cmc = custo_prod_geral
+        if cmc_calc > 0 and abs(cmc - cmc_calc) / cmc_calc > 0.05:
+            warnings.append(f"CMC do meta ({cmc:.2f}) diverge >5% do calculado ({cmc_calc:.2f}) — usando meta")
+    else:
+        cmc = cmc_calc
+
+    cob_calc = round(cmc + price_ferr + price_cola + price_frete + price_mo, 2)
+    if cob_meta > 0:
+        cob = cob_meta
+        if cob_calc > 0 and abs(cob - cob_calc) / cob_calc > 0.05:
+            warnings.append(f"COB do meta ({cob:.2f}) diverge >5% do calculado ({cob_calc:.2f}) — usando meta")
+    else:
+        cob = cob_calc
+
+    pv = pv_meta if pv_meta > 0 else round(_pv_divisor(cob, margem_pct, imposto_pct, comissao_pct), 2)
 
     desconto_pct   = float(meta.get("desconto_global", 0) or 0)
-    desconto_valor = round(pv * desconto_pct / 100.0, 2)
-    total_com_desc = pv_final_meta if pv_final_meta > 0 else round(pv - desconto_valor, 2)
-    abaixo_custo   = total_com_desc < cob - 0.005
+    total_com_desc = pv_final_meta if pv_final_meta > 0 else round(pv_com_desconto(pv, desconto_pct), 2)
+    desconto_valor = round(pv - total_com_desc, 2)
+    venda_abaixo_custo = abaixo_custo(total_com_desc, cob)
 
     return {
         "chapas": chapas_out, "pecas": pecas_out,
@@ -204,12 +252,14 @@ def calcular(meta, chapas, pecas):
         "desconto_pct":      desconto_pct,
         "desconto_valor":    desconto_valor,
         "total_com_desc":    total_com_desc,  # PV final = PV - desconto
-        "abaixo_custo":      abaixo_custo,
+        "abaixo_custo":      venda_abaixo_custo,
         "waste_pct":         waste * 100,
         "fita_total":        fita_total,
         "cotacao_id":        cotacao_id,
         "custo_aq_geral":    custo_aq_geral,
         "custo_prod_geral":  custo_prod_geral,
+        "mo_auto":           warnings_mo_auto,
+        "warnings":          warnings,
     }
 
 

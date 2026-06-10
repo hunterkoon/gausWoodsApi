@@ -1,5 +1,5 @@
 """
-Gasômetro Madeiras — API REST
+GausWoods — API REST
 FastAPI · porta 8080 · PostgreSQL
 Swagger UI: http://localhost:8080/docs
 """
@@ -52,7 +52,6 @@ app = FastAPI(
     description=(
         "API de consulta de produtos: Chapas (MDF/MDP/Compensado), "
         "Fitas de Borda e Ferragens.\n\n"
-        "Dados extraídos do site [madeirasgasometro.com.br](https://www.madeirasgasometro.com.br).\n\n"
         "**Autenticação:** HTTP Basic Auth — envie usuário e senha em todas as requisições."
     ),
     version="1.0.0",
