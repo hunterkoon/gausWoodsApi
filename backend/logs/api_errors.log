@@ -1,0 +1,429 @@
+2026-06-06 18:23:00,432 | ERROR | source=api.unhandled message=Erro nao tratado na request exception=2 validation errors for ClienteOut
+criado_em
+  Input should be a valid datetime [type=datetime_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.13/v/datetime_type
+atualizado_em
+  Input should be a valid datetime [type=datetime_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.13/v/datetime_type method=POST path=/clientes query= elapsed_ms=1080.31
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\DADOS\api\main.py", line 56, in performance_logging_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\middleware\base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\middleware\cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\routing.py", line 330, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\anyio\_backends\_asyncio.py", line 2518, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\anyio\_backends\_asyncio.py", line 1002, in run
+    result = context.run(func, *args)
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\DADOS\api\routers\clientes.py", line 158, in criar_cliente
+    return _row_to_out(full)
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\DADOS\api\routers\clientes.py", line 84, in _row_to_out
+    return ClienteOut(
+        id=row["id"],
+    ...<9 lines>...
+        atualizado_em=row["atualizado_em"],
+    )
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\pydantic\main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+pydantic_core._pydantic_core.ValidationError: 2 validation errors for ClienteOut
+criado_em
+  Input should be a valid datetime [type=datetime_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.13/v/datetime_type
+atualizado_em
+  Input should be a valid datetime [type=datetime_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.13/v/datetime_type
+
+2026-06-06 18:26:33,437 | ERROR | source=api.response message=Resposta com erro method=GET path=/clientes/4 query= status=404 elapsed_ms=724.70
+2026-06-06 18:35:59,910 | ERROR | source=api.response message=Resposta com erro method=GET path=/clientes/999999 query= status=404 elapsed_ms=122.18
+2026-06-06 18:36:01,032 | ERROR | source=api.response message=Resposta com erro method=GET path=/clientes/999999 query= status=404 elapsed_ms=121.73
+2026-06-06 18:54:46,992 | ERROR | source=database.query_one message=Erro executando query_one exception=OperationalError('server closed the connection unexpectedly\n\tThis probably means the server terminated abnormally\n\tbefore or while processing the request.\nserver closed the connection unexpectedly\n\tThis probably means the server terminated abnormally\n\tbefore or while processing the request.\n') elapsed_ms=24.78
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\DADOS\api\database.py", line 62, in query_one
+    cur.execute(sql, params or ())
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.OperationalError: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+
+
+2026-06-06 18:55:12,570 | ERROR | source=database.query message=Erro executando query exception=OperationalError('server closed the connection unexpectedly\n\tThis probably means the server terminated abnormally\n\tbefore or while processing the request.\nserver closed the connection unexpectedly\n\tThis probably means the server terminated abnormally\n\tbefore or while processing the request.\n') elapsed_ms=6.68
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\DADOS\api\database.py", line 47, in query
+    cur.execute(sql, params or ())
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.OperationalError: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+
+
+2026-06-06 18:55:12,593 | ERROR | source=api.unhandled message=Erro nao tratado na request exception=OperationalError('server closed the connection unexpectedly\n\tThis probably means the server terminated abnormally\n\tbefore or while processing the request.\nserver closed the connection unexpectedly\n\tThis probably means the server terminated abnormally\n\tbefore or while processing the request.\n') method=GET path=/fitas query=limit=100&nome=branco&rolo_min=1&valor_min=0.01 elapsed_ms=27.03
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\DADOS\api\main.py", line 56, in performance_logging_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\middleware\base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\middleware\cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\routing.py", line 330, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\anyio\_backends\_asyncio.py", line 2518, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\anyio\_backends\_asyncio.py", line 1002, in run
+    result = context.run(func, *args)
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\DADOS\api\routers\fitas.py", line 65, in listar_fitas
+    rows = query(conn, f"""
+        SELECT q.*, COUNT(*) OVER() AS total_count
+    ...<2 lines>...
+        LIMIT %s OFFSET %s
+    """, params + [pg["limit"], pg["offset"]])
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\DADOS\api\database.py", line 47, in query
+    cur.execute(sql, params or ())
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.OperationalError: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+
+
+2026-06-06 19:08:15,378 | ERROR | source=api.response message=Resposta com erro method=GET path=/clientes/4 query= status=404 elapsed_ms=128.18
+2026-06-06 19:21:17,146 | ERROR | source=database.query_one message=Erro executando query_one exception=OperationalError('server closed the connection unexpectedly\n\tThis probably means the server terminated abnormally\n\tbefore or while processing the request.\nserver closed the connection unexpectedly\n\tThis probably means the server terminated abnormally\n\tbefore or while processing the request.\n') elapsed_ms=43.38
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\DADOS\api\database.py", line 62, in query_one
+    cur.execute(sql, params or ())
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.OperationalError: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+
+
+2026-06-07 01:14:29,125 | ERROR | source=database.query_one message=Erro executando query_one exception=OperationalError('server closed the connection unexpectedly\n\tThis probably means the server terminated abnormally\n\tbefore or while processing the request.\nserver closed the connection unexpectedly\n\tThis probably means the server terminated abnormally\n\tbefore or while processing the request.\n') elapsed_ms=22.59
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\DADOS\api\database.py", line 62, in query_one
+    cur.execute(sql, params or ())
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.OperationalError: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+
+
+2026-06-07 01:15:17,774 | ERROR | source=database.query message=Erro executando query exception=OperationalError('server closed the connection unexpectedly\n\tThis probably means the server terminated abnormally\n\tbefore or while processing the request.\nserver closed the connection unexpectedly\n\tThis probably means the server terminated abnormally\n\tbefore or while processing the request.\n') elapsed_ms=6.26
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\DADOS\api\database.py", line 47, in query
+    cur.execute(sql, params or ())
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.OperationalError: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+
+
+2026-06-07 01:15:17,844 | ERROR | source=api.unhandled message=Erro nao tratado na request exception=OperationalError('server closed the connection unexpectedly\n\tThis probably means the server terminated abnormally\n\tbefore or while processing the request.\nserver closed the connection unexpectedly\n\tThis probably means the server terminated abnormally\n\tbefore or while processing the request.\n') method=GET path=/chapas query=limit=30&nome=CARVALHO&espessura_min=14.5&espessura_max=15.5&valor_min=0.01 elapsed_ms=33.19
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\DADOS\api\main.py", line 56, in performance_logging_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\middleware\base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\middleware\cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\routing.py", line 330, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\anyio\_backends\_asyncio.py", line 2518, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\anyio\_backends\_asyncio.py", line 1002, in run
+    result = context.run(func, *args)
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\DADOS\api\routers\chapas.py", line 76, in listar_chapas
+    rows = query(conn, f"""
+        SELECT q.*, COUNT(*) OVER() AS total_count
+    ...<2 lines>...
+        LIMIT %s OFFSET %s
+    """, params + [pg["limit"], pg["offset"]])
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\DADOS\api\database.py", line 47, in query
+    cur.execute(sql, params or ())
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.OperationalError: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+
+
+2026-06-07 01:22:36,509 | ERROR | source=api.response message=Resposta com erro method=GET path=/clientes/4 query= status=404 elapsed_ms=124.38
+2026-06-07 01:23:01,991 | ERROR | source=api.response message=Resposta com erro method=GET path=/clientes/4 query= status=404 elapsed_ms=121.92
+2026-06-07 01:42:45,935 | ERROR | source=database.query_one message=Erro executando query_one exception=OperationalError('server closed the connection unexpectedly\n\tThis probably means the server terminated abnormally\n\tbefore or while processing the request.\nserver closed the connection unexpectedly\n\tThis probably means the server terminated abnormally\n\tbefore or while processing the request.\n') elapsed_ms=23.02
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\DADOS\api\database.py", line 62, in query_one
+    cur.execute(sql, params or ())
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\psycopg2\extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.OperationalError: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+
+
+2026-06-07 01:42:58,822 | ERROR | source=database.execute message=Erro executando execute exception=OperationalError('server closed the connection unexpectedly\n\tThis probably means the server terminated abnormally\n\tbefore or while processing the request.\nserver closed the connection unexpectedly\n\tThis probably means the server terminated abnormally\n\tbefore or while processing the request.\n') elapsed_ms=8.21
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\DADOS\api\database.py", line 92, in execute
+    cur.execute(sql, params or ())
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+psycopg2.OperationalError: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+
+
+2026-06-07 01:42:58,866 | ERROR | source=api.unhandled message=Erro nao tratado na request exception=OperationalError('server closed the connection unexpectedly\n\tThis probably means the server terminated abnormally\n\tbefore or while processing the request.\nserver closed the connection unexpectedly\n\tThis probably means the server terminated abnormally\n\tbefore or while processing the request.\n') method=GET path=/cotacoes query=page=1&limit=100 elapsed_ms=27.75
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\DADOS\api\main.py", line 56, in performance_logging_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\middleware\base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\middleware\cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\fastapi\routing.py", line 330, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\starlette\concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\anyio\to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\anyio\_backends\_asyncio.py", line 2518, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Users\hanna\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\anyio\_backends\_asyncio.py", line 1002, in run
+    result = context.run(func, *args)
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\DADOS\api\routers\cotacoes.py", line 232, in listar_cotacoes
+    ensure_table(conn)
+    ~~~~~~~~~~~~^^^^^^
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\DADOS\api\routers\cotacoes.py", line 144, in ensure_table
+    execute(conn, DDL_COTACOES, commit=True)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\DADOS\api\database.py", line 92, in execute
+    cur.execute(sql, params or ())
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+psycopg2.OperationalError: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+
+
+2026-06-07 01:43:05,321 | ERROR | source=api.response message=Resposta com erro method=GET path=/clientes/4 query= status=404 elapsed_ms=122.78

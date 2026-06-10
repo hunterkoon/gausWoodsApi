@@ -1,0 +1,635 @@
+2026-06-06T18:26:33 | HTTP GET url=http://localhost:8080/clientes/4 elapsed_ms=2771.20 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 102, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-06T18:36:01 | HTTP GET url=http://127.0.0.1:8080/clientes/999999 elapsed_ms=159.91 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 102, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-06T18:36:01 | RESULT status=FAIL lines=['FAIL', 'Cliente 999999 nao encontrado']
+2026-06-06T18:55:12 | HTTP GET url=http://127.0.0.1:8080/fitas?limit=100&nome=branco&rolo_min=1&valor_min=0.01 elapsed_ms=99.94 error=<HTTPError 500: 'Internal Server Error'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 102, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 500: Internal Server Error
+
+2026-06-06T18:55:12 | RESULT status=FAIL lines=['FAIL', 'Erro na busca (sem resposta da API)']
+2026-06-06T19:08:15 | HTTP GET url=http://127.0.0.1:8080/clientes/4 elapsed_ms=145.40 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 102, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-07T01:15:17 | HTTP GET url=http://127.0.0.1:8080/chapas?limit=30&nome=CARVALHO&espessura_min=14.5&espessura_max=15.5&valor_min=0.01 elapsed_ms=117.30 error=<HTTPError 500: 'Internal Server Error'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 102, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 500: Internal Server Error
+
+2026-06-07T01:15:17 | RESULT status=FAIL lines=['FAIL', 'Erro na busca (sem resposta da API)']
+2026-06-07T01:22:36 | HTTP GET url=http://127.0.0.1:8080/clientes/4 elapsed_ms=126.68 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 102, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-07T01:23:02 | HTTP GET url=http://127.0.0.1:8080/clientes/4 elapsed_ms=141.02 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 102, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-07T01:42:58 | HTTP GET url=http://127.0.0.1:8080/cotacoes?page=1&limit=100 elapsed_ms=127.18 error=<HTTPError 500: 'Internal Server Error'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 102, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 500: Internal Server Error
+
+2026-06-07T01:42:58 | RESULT status=FAIL lines=['FAIL', 'Erro ao buscar cotacoes']
+2026-06-07T01:43:05 | HTTP GET url=http://127.0.0.1:8080/clientes/4 elapsed_ms=137.27 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 102, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-07T15:08:37 | HTTP GET url=https://gauswoods.com.br/health elapsed_ms=442.26 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 114, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-07T15:08:37 | RESULT status=FAIL lines=['FAIL', 'API indisponível']
+2026-06-07T15:27:36 | HTTP GET url=https://gauswoods.com.br/api/clientes/4 elapsed_ms=361.47 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 114, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-07T18:17:50 | HTTP GET url=https://gauswoods.com.br/api/clientes/4 elapsed_ms=716.17 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 114, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-07T18:18:45 | HTTP GET url=https://gauswoods.com.br/api/clientes/4 elapsed_ms=917.91 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 114, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-07T22:51:08 | HTTP GET url=https://gauswoods.com.br/api/clientes/4 elapsed_ms=366.39 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 114, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-07T23:01:03 | HTTP GET url=https://gauswoods.com.br/api/clientes/4 elapsed_ms=370.18 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 114, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-07T23:03:03 | HTTP GET url=https://gauswoods.com.br/api/clientes/4 elapsed_ms=388.44 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 114, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-08T00:00:56 | HTTP GET url=https://gauswoods.com.br/api/clientes/4 elapsed_ms=384.75 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 120, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-08T00:23:08 | HTTP GET url=https://gauswoods.com.br/api/clientes/4 elapsed_ms=365.77 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 120, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-08T10:14:18 | HTTP GET url=https://gauswoods.com.br/api/clientes/4 elapsed_ms=390.10 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 120, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-08T10:22:57 | HTTP GET url=https://gauswoods.com.br/api/clientes/4 elapsed_ms=387.51 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 120, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-08T10:51:55 | HTTP GET url=https://gauswoods.com.br/api/clientes/4 elapsed_ms=386.49 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 120, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-08T14:53:26 | HTTP GET url=https://gauswoods.com.br/api/clientes/4 elapsed_ms=388.39 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 120, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-08T15:34:58 | HTTP GET url=https://gauswoods.com.br/api/clientes/4 elapsed_ms=372.54 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 120, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-08T15:38:31 | HTTP GET url=https://gauswoods.com.br/api/clientes/4 elapsed_ms=363.27 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 120, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-08T15:38:56 | HTTP GET url=https://gauswoods.com.br/api/clientes/4 elapsed_ms=387.71 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 120, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-08T15:41:34 | HTTP GET url=https://gauswoods.com.br/api/clientes/4 elapsed_ms=365.61 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 120, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-08T16:22:16 | HTTP GET url=https://gauswoods.com.br/api/clientes/4 elapsed_ms=407.00 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 120, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-08T16:29:09 | HTTP GET url=https://gauswoods.com.br/api/clientes/4 elapsed_ms=379.94 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 120, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-08T16:41:02 | HTTP GET url=https://gauswoods.com.br/api/clientes/4 elapsed_ms=384.76 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 120, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+2026-06-08T17:49:07 | HTTP GET url=https://gauswoods.com.br/api/clientes/4 elapsed_ms=365.73 error=<HTTPError 404: 'Not Found'>
+Traceback (most recent call last):
+  File "C:\Users\hanna\OneDrive\Desktop\GABRIEL\MaxScript\cnc_api_helper.py", line 120, in _get
+    resp = urllib.request.urlopen(req, timeout=10)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Program Files\Autodesk\3ds Max 2027\Python\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+

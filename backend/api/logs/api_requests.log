@@ -1,0 +1,15 @@
+2026-06-07 12:32:32,475 | INFO | method=GET path=/docs query=- status=200 elapsed_ms=0.29
+2026-06-07 12:32:32,671 | INFO | method=GET path=/openapi.json query=- status=200 elapsed_ms=96.56
+2026-06-07 12:34:26,802 | INFO | method=GET path=/docs query=- status=200 elapsed_ms=0.28
+2026-06-07 12:34:26,986 | INFO | method=GET path=/openapi.json query=- status=200 elapsed_ms=94.61
+2026-06-07 12:34:32,080 | INFO | method=GET path=/chapas query=page=1&limit=20 status=200 elapsed_ms=151.14
+2026-06-07 13:34:46,590 | INFO | method=GET path=/docs query=- status=200 elapsed_ms=0.43
+2026-06-07 13:34:46,909 | INFO | method=GET path=/api/openapi.json query=- status=200 elapsed_ms=122.42
+2026-06-07 13:34:51,385 | INFO | method=GET path=/api/docs query=- status=200 elapsed_ms=0.47
+2026-06-07 13:34:51,432 | INFO | method=GET path=/api/openapi.json query=- status=200 elapsed_ms=1.10
+2026-06-07 13:34:56,435 | INFO | method=GET path=/api/doc query=- status=404 elapsed_ms=0.41
+2026-06-07 13:34:56,499 | INFO | method=GET path=/favicon.ico query=- status=404 elapsed_ms=0.58
+2026-06-07 13:34:58,699 | INFO | method=GET path=/api/docs query=- status=200 elapsed_ms=0.41
+2026-06-07 13:34:58,750 | INFO | method=GET path=/api/openapi.json query=- status=200 elapsed_ms=1.16
+2026-06-07 13:35:01,788 | INFO | method=GET path=/api/docs query=- status=200 elapsed_ms=0.45
+2026-06-07 13:35:01,886 | INFO | method=GET path=/api/openapi.json query=- status=200 elapsed_ms=0.86

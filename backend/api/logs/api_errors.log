@@ -1,0 +1,2 @@
+2026-06-07 13:34:56,435 | ERROR | source=api.response message=Resposta com erro method=GET path=/api/doc query= status=404 elapsed_ms=0.41
+2026-06-07 13:34:56,500 | ERROR | source=api.response message=Resposta com erro method=GET path=/favicon.ico query= status=404 elapsed_ms=0.58

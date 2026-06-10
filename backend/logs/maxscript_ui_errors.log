@@ -1,0 +1,39 @@
+[06/06/2026 18:43:28] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[06/06/2026 18:55:12] API command falhou. cmd=search_fitas status=FAIL elapsed_ms=715 lines=#("FAIL", "Erro na busca (sem resposta da API)")
+[06/06/2026 19:14:31] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[07/06/2026 01:15:18] API command falhou. cmd=search_chapas status=FAIL elapsed_ms=798 lines=#("FAIL", "Erro na busca (sem resposta da API)")
+[07/06/2026 01:22:54] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[07/06/2026 01:42:58] API command falhou. cmd=search_cotacoes status=FAIL elapsed_ms=808 lines=#("FAIL", "Erro ao buscar cotacoes")
+[07/06/2026 01:43:05] apiWriteCmd bloqueado: chamada API em andamento. cmd=search_clientes
+[07/06/2026 01:43:06] apiWriteCmd bloqueado: chamada API em andamento. cmd=search_clientes
+[07/06/2026 01:43:12] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[07/06/2026 01:44:04] apiWriteCmd bloqueado: chamada API em andamento. cmd=export_cotacao_html
+[07/06/2026 15:08:37] API command falhou. cmd=health_check status=FAIL elapsed_ms=1401 lines=#("FAIL", "API indisponível")
+[07/06/2026 15:24:07] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[07/06/2026 15:24:32] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[07/06/2026 15:24:39] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[07/06/2026 15:25:13] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[07/06/2026 15:27:42] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[07/06/2026 15:27:57] apiWriteCmd bloqueado: chamada API em andamento. cmd=export_cotacao_html
+[07/06/2026 15:29:51] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[07/06/2026 15:29:56] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[07/06/2026 18:17:57] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[07/06/2026 18:18:23] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[07/06/2026 18:18:52] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[07/06/2026 18:30:25] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[07/06/2026 18:30:30] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[07/06/2026 18:31:13] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[07/06/2026 18:31:31] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[07/06/2026 18:31:40] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[07/06/2026 18:31:45] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[07/06/2026 18:31:46] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[07/06/2026 18:31:49] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[08/06/2026 00:21:12] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[08/06/2026 00:21:29] apiWriteCmd bloqueado: chamada API em andamento. cmd=export_cotacao_html
+[08/06/2026 00:29:59] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[08/06/2026 00:30:15] apiWriteCmd bloqueado: chamada API em andamento. cmd=export_cotacao_html
+[08/06/2026 10:54:44] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[08/06/2026 14:53:30] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[08/06/2026 14:53:42] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[08/06/2026 14:53:46] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao
+[08/06/2026 15:38:39] apiWriteCmd bloqueado: chamada API em andamento. cmd=get_cotacao

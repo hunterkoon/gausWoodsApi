@@ -1,0 +1,894 @@
+2026-06-06 18:22:06,079 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:22:06,330 | INFO | operation=count ok=True elapsed_ms=247.42 rows=1 sql=SELECT COUNT(*) FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.nome ILIKE %s AND cat.nome ILIKE %s AND c.espessura_mm >= %s AND c.espessura_mm <= %s AND c.valor >= %s params=['%pinho%', '%Compensado%', 5.5, 6.5, 0.01]
+2026-06-06 18:22:06,458 | INFO | operation=query ok=True elapsed_ms=128.47 rows=1 sql=SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.nome ILIKE %s AND cat.nome ILIKE %s AND c.espessura_mm >= %s AND c.espessura_mm <= %s AND c.valor >= %s ORDER BY c.nome LIMIT %s OFFSET %s params=['%pinho%', '%Compensado%', 5.5, 6.5, 0.01, 30, 0]
+2026-06-06 18:22:06,581 | INFO | operation=pool_putconn ok=True elapsed_ms=118.14 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:22:59,341 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:22:59,699 | INFO | operation=execute ok=True elapsed_ms=356.19 rows=-1 sql=CREATE TABLE IF NOT EXISTS clientes ( id SERIAL PRIMARY KEY, nome VARCHAR(200) NOT NULL, documento VARCHAR(20), telefone VARCHAR(20), email VARCHAR(150), endereco TEXT, cidade VARCHAR(100), estado CHAR(2), observacoes TEXT, criado_em TIMESTAMP DEFAULT NOW(), atualizado_em TIMESTAMP DEFAULT NOW() ); params=()
+2026-06-06 18:23:00,059 | INFO | operation=execute ok=True elapsed_ms=360.29 rows=1 sql=INSERT INTO clientes (nome, documento, telefone, email, endereco, cidade, estado, observacoes) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id, criado_em, atualizado_em params=('ARTHUR REY', '413.434.948-69', '11999999999', 'ART@ART.COM', '', 'SAO PAULO', 'SP', '')
+2026-06-06 18:23:00,296 | INFO | operation=query_one ok=True elapsed_ms=236.51 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(5,)
+2026-06-06 18:23:00,418 | INFO | operation=pool_putconn ok=True elapsed_ms=118.61 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:25:38,287 | INFO | operation=pool_getconn ok=True elapsed_ms=0.19 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:25:38,651 | INFO | operation=execute ok=True elapsed_ms=361.29 rows=-1 sql=CREATE TABLE IF NOT EXISTS clientes ( id SERIAL PRIMARY KEY, nome VARCHAR(200) NOT NULL, documento VARCHAR(20), telefone VARCHAR(20), email VARCHAR(150), endereco TEXT, cidade VARCHAR(100), estado CHAR(2), observacoes TEXT, criado_em TIMESTAMP DEFAULT NOW(), atualizado_em TIMESTAMP DEFAULT NOW() ); params=()
+2026-06-06 18:25:38,888 | INFO | operation=count ok=True elapsed_ms=236.64 rows=1 sql=SELECT COUNT(*) FROM clientes params=()
+2026-06-06 18:25:39,008 | INFO | operation=query ok=True elapsed_ms=119.89 rows=1 sql=SELECT id, nome, documento, cidade, estado, telefone FROM clientes ORDER BY nome LIMIT %s OFFSET %s params=[50, 0]
+2026-06-06 18:25:39,145 | INFO | operation=pool_putconn ok=True elapsed_ms=118.44 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:25:58,885 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:25:59,245 | INFO | operation=execute ok=True elapsed_ms=356.53 rows=-1 sql=CREATE TABLE IF NOT EXISTS cotacoes ( id SERIAL PRIMARY KEY, chapas_json TEXT NOT NULL, fitas_json TEXT NOT NULL, outros_json TEXT NOT NULL, desperdicio_pct NUMERIC(6,2) DEFAULT 0, aproveitamento_pct NUMERIC(6,2) DEFAULT 0, total_chapas NUMERIC(12,2) DEFAULT 0, total_fitas NUMERIC(12,2) DEFAULT 0, total_outros NUMERIC(12,2) DEFAULT 0, total_geral NUMERIC(12,2) DEFAULT 0, observacoes TEXT, cliente_id INTEGER, nome_projeto VARCHAR(200), previsao_entrega VARCHAR(20), desconto_global NUMERIC(6,2) DEFAULT 0, criado_em TIMESTAMP DEFAULT NOW() ); -- Adiciona colunas se a tabela ja existir (migracao segura) ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS cliente_id INTEGER; ALTER TABLE cotacoes ADD... params=()
+2026-06-06 18:25:59,606 | INFO | operation=execute ok=True elapsed_ms=360.54 rows=1 sql=INSERT INTO cotacoes (chapas_json, fitas_json, outros_json, desperdicio_pct, aproveitamento_pct, total_chapas, total_fitas, total_outros, total_geral, observacoes, cliente_id, nome_projeto, previsao_entrega, desconto_global) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id, criado_em params=('[{"espessura_mm": 18.0, "produto": "Compensado Pinho Cuiabano 2.200 x 1.600 x 18mm", "quantidade": 1, "valor_unit": 263.17, "subtotal": 315.541}, {"espessura_mm": 6.0, "produto": "Compensado Pinho Cuiabano 2.200 x 1.600 x 06mm", "quantidade": 1, "valor_unit": 113.93, "subtotal": 136.602}]', '[{"produto": "Manual", "metros_total": 0.0, "valor_m": 0.0, "subtotal": 0.0}]', '{"ferragem": 90.0, "cola": 0.0, "mao_obra": 0.0, "frete": 75.0}', 19.9, 45.6, 452.143, 0.0, 165.0, 617.143, 'TESTE', 1, '...
+2026-06-06 18:25:59,845 | INFO | operation=query_one ok=True elapsed_ms=239.05 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(6,)
+2026-06-06 18:25:59,969 | INFO | operation=pool_putconn ok=True elapsed_ms=118.34 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:26:09,763 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:26:10,123 | INFO | operation=execute ok=True elapsed_ms=358.86 rows=-1 sql=CREATE TABLE IF NOT EXISTS clientes ( id SERIAL PRIMARY KEY, nome VARCHAR(200) NOT NULL, documento VARCHAR(20), telefone VARCHAR(20), email VARCHAR(150), endereco TEXT, cidade VARCHAR(100), estado CHAR(2), observacoes TEXT, criado_em TIMESTAMP DEFAULT NOW(), atualizado_em TIMESTAMP DEFAULT NOW() ); params=()
+2026-06-06 18:26:10,366 | INFO | operation=query_one ok=True elapsed_ms=242.35 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 18:26:10,492 | INFO | operation=pool_putconn ok=True elapsed_ms=122.10 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:26:27,300 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:26:27,656 | INFO | operation=execute ok=True elapsed_ms=355.04 rows=-1 sql=CREATE TABLE IF NOT EXISTS cotacoes ( id SERIAL PRIMARY KEY, chapas_json TEXT NOT NULL, fitas_json TEXT NOT NULL, outros_json TEXT NOT NULL, desperdicio_pct NUMERIC(6,2) DEFAULT 0, aproveitamento_pct NUMERIC(6,2) DEFAULT 0, total_chapas NUMERIC(12,2) DEFAULT 0, total_fitas NUMERIC(12,2) DEFAULT 0, total_outros NUMERIC(12,2) DEFAULT 0, total_geral NUMERIC(12,2) DEFAULT 0, observacoes TEXT, cliente_id INTEGER, nome_projeto VARCHAR(200), previsao_entrega VARCHAR(20), desconto_global NUMERIC(6,2) DEFAULT 0, criado_em TIMESTAMP DEFAULT NOW() ); -- Adiciona colunas se a tabela ja existir (migracao segura) ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS cliente_id INTEGER; ALTER TABLE cotacoes ADD... params=()
+2026-06-06 18:26:27,892 | INFO | operation=count ok=True elapsed_ms=234.85 rows=1 sql=SELECT COUNT(*) FROM cotacoes params=()
+2026-06-06 18:26:28,011 | INFO | operation=query ok=True elapsed_ms=119.23 rows=6 sql=SELECT id, total_geral, total_chapas, total_fitas, total_outros, aproveitamento_pct, desconto_global, cliente_id, nome_projeto, criado_em FROM cotacoes ORDER BY criado_em DESC LIMIT %s OFFSET %s params=[100, 0]
+2026-06-06 18:26:28,135 | INFO | operation=pool_putconn ok=True elapsed_ms=120.65 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:26:30,070 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:26:30,424 | INFO | operation=execute ok=True elapsed_ms=353.35 rows=-1 sql=CREATE TABLE IF NOT EXISTS clientes ( id SERIAL PRIMARY KEY, nome VARCHAR(200) NOT NULL, documento VARCHAR(20), telefone VARCHAR(20), email VARCHAR(150), endereco TEXT, cidade VARCHAR(100), estado CHAR(2), observacoes TEXT, criado_em TIMESTAMP DEFAULT NOW(), atualizado_em TIMESTAMP DEFAULT NOW() ); params=()
+2026-06-06 18:26:30,662 | INFO | operation=query_one ok=True elapsed_ms=238.03 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 18:26:30,786 | INFO | operation=pool_putconn ok=True elapsed_ms=120.21 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:26:32,713 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:26:33,073 | INFO | operation=execute ok=True elapsed_ms=359.29 rows=-1 sql=CREATE TABLE IF NOT EXISTS clientes ( id SERIAL PRIMARY KEY, nome VARCHAR(200) NOT NULL, documento VARCHAR(20), telefone VARCHAR(20), email VARCHAR(150), endereco TEXT, cidade VARCHAR(100), estado CHAR(2), observacoes TEXT, criado_em TIMESTAMP DEFAULT NOW(), atualizado_em TIMESTAMP DEFAULT NOW() ); params=()
+2026-06-06 18:26:33,314 | INFO | operation=query_one ok=True elapsed_ms=240.68 rows=0 sql=SELECT * FROM clientes WHERE id = %s params=(4,)
+2026-06-06 18:26:33,436 | INFO | operation=pool_putconn ok=True elapsed_ms=117.59 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:26:36,878 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:26:37,243 | INFO | operation=execute ok=True elapsed_ms=363.39 rows=-1 sql=CREATE TABLE IF NOT EXISTS cotacoes ( id SERIAL PRIMARY KEY, chapas_json TEXT NOT NULL, fitas_json TEXT NOT NULL, outros_json TEXT NOT NULL, desperdicio_pct NUMERIC(6,2) DEFAULT 0, aproveitamento_pct NUMERIC(6,2) DEFAULT 0, total_chapas NUMERIC(12,2) DEFAULT 0, total_fitas NUMERIC(12,2) DEFAULT 0, total_outros NUMERIC(12,2) DEFAULT 0, total_geral NUMERIC(12,2) DEFAULT 0, observacoes TEXT, cliente_id INTEGER, nome_projeto VARCHAR(200), previsao_entrega VARCHAR(20), desconto_global NUMERIC(6,2) DEFAULT 0, criado_em TIMESTAMP DEFAULT NOW() ); -- Adiciona colunas se a tabela ja existir (migracao segura) ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS cliente_id INTEGER; ALTER TABLE cotacoes ADD... params=()
+2026-06-06 18:26:37,483 | INFO | operation=query_one ok=True elapsed_ms=238.20 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(1,)
+2026-06-06 18:26:37,607 | INFO | operation=pool_putconn ok=True elapsed_ms=119.48 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:26:41,081 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:26:41,446 | INFO | operation=execute ok=True elapsed_ms=363.37 rows=-1 sql=CREATE TABLE IF NOT EXISTS clientes ( id SERIAL PRIMARY KEY, nome VARCHAR(200) NOT NULL, documento VARCHAR(20), telefone VARCHAR(20), email VARCHAR(150), endereco TEXT, cidade VARCHAR(100), estado CHAR(2), observacoes TEXT, criado_em TIMESTAMP DEFAULT NOW(), atualizado_em TIMESTAMP DEFAULT NOW() ); params=()
+2026-06-06 18:26:41,691 | INFO | operation=query_one ok=True elapsed_ms=244.33 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 18:26:41,814 | INFO | operation=pool_putconn ok=True elapsed_ms=117.73 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:26:51,365 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:26:51,724 | INFO | operation=execute ok=True elapsed_ms=358.28 rows=-1 sql=CREATE TABLE IF NOT EXISTS clientes ( id SERIAL PRIMARY KEY, nome VARCHAR(200) NOT NULL, documento VARCHAR(20), telefone VARCHAR(20), email VARCHAR(150), endereco TEXT, cidade VARCHAR(100), estado CHAR(2), observacoes TEXT, criado_em TIMESTAMP DEFAULT NOW(), atualizado_em TIMESTAMP DEFAULT NOW() ); params=()
+2026-06-06 18:26:51,962 | INFO | operation=count ok=True elapsed_ms=237.71 rows=1 sql=SELECT COUNT(*) FROM clientes WHERE nome ILIKE %s params=['%GABRIEL%']
+2026-06-06 18:26:52,083 | INFO | operation=query ok=True elapsed_ms=121.42 rows=1 sql=SELECT id, nome, documento, cidade, estado, telefone FROM clientes WHERE nome ILIKE %s ORDER BY nome LIMIT %s OFFSET %s params=['%GABRIEL%', 50, 0]
+2026-06-06 18:26:52,203 | INFO | operation=pool_putconn ok=True elapsed_ms=117.74 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:27:03,436 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:27:03,796 | INFO | operation=execute ok=True elapsed_ms=358.80 rows=-1 sql=CREATE TABLE IF NOT EXISTS cotacoes ( id SERIAL PRIMARY KEY, chapas_json TEXT NOT NULL, fitas_json TEXT NOT NULL, outros_json TEXT NOT NULL, desperdicio_pct NUMERIC(6,2) DEFAULT 0, aproveitamento_pct NUMERIC(6,2) DEFAULT 0, total_chapas NUMERIC(12,2) DEFAULT 0, total_fitas NUMERIC(12,2) DEFAULT 0, total_outros NUMERIC(12,2) DEFAULT 0, total_geral NUMERIC(12,2) DEFAULT 0, observacoes TEXT, cliente_id INTEGER, nome_projeto VARCHAR(200), previsao_entrega VARCHAR(20), desconto_global NUMERIC(6,2) DEFAULT 0, criado_em TIMESTAMP DEFAULT NOW() ); -- Adiciona colunas se a tabela ja existir (migracao segura) ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS cliente_id INTEGER; ALTER TABLE cotacoes ADD... params=()
+2026-06-06 18:27:04,034 | INFO | operation=count ok=True elapsed_ms=237.45 rows=1 sql=SELECT COUNT(*) FROM cotacoes WHERE cliente_id = %s params=[1]
+2026-06-06 18:27:04,152 | INFO | operation=query ok=True elapsed_ms=118.12 rows=5 sql=SELECT id, total_geral, total_chapas, total_fitas, total_outros, aproveitamento_pct, desconto_global, cliente_id, nome_projeto, criado_em FROM cotacoes WHERE cliente_id = %s ORDER BY criado_em DESC LIMIT %s OFFSET %s params=[1, 100, 0]
+2026-06-06 18:27:04,272 | INFO | operation=pool_putconn ok=True elapsed_ms=117.33 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:27:06,208 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:27:06,563 | INFO | operation=execute ok=True elapsed_ms=353.87 rows=-1 sql=CREATE TABLE IF NOT EXISTS clientes ( id SERIAL PRIMARY KEY, nome VARCHAR(200) NOT NULL, documento VARCHAR(20), telefone VARCHAR(20), email VARCHAR(150), endereco TEXT, cidade VARCHAR(100), estado CHAR(2), observacoes TEXT, criado_em TIMESTAMP DEFAULT NOW(), atualizado_em TIMESTAMP DEFAULT NOW() ); params=()
+2026-06-06 18:27:06,799 | INFO | operation=query_one ok=True elapsed_ms=235.52 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 18:27:06,921 | INFO | operation=pool_putconn ok=True elapsed_ms=118.86 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:27:09,835 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:27:10,190 | INFO | operation=execute ok=True elapsed_ms=353.78 rows=-1 sql=CREATE TABLE IF NOT EXISTS cotacoes ( id SERIAL PRIMARY KEY, chapas_json TEXT NOT NULL, fitas_json TEXT NOT NULL, outros_json TEXT NOT NULL, desperdicio_pct NUMERIC(6,2) DEFAULT 0, aproveitamento_pct NUMERIC(6,2) DEFAULT 0, total_chapas NUMERIC(12,2) DEFAULT 0, total_fitas NUMERIC(12,2) DEFAULT 0, total_outros NUMERIC(12,2) DEFAULT 0, total_geral NUMERIC(12,2) DEFAULT 0, observacoes TEXT, cliente_id INTEGER, nome_projeto VARCHAR(200), previsao_entrega VARCHAR(20), desconto_global NUMERIC(6,2) DEFAULT 0, criado_em TIMESTAMP DEFAULT NOW() ); -- Adiciona colunas se a tabela ja existir (migracao segura) ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS cliente_id INTEGER; ALTER TABLE cotacoes ADD... params=()
+2026-06-06 18:27:10,426 | INFO | operation=query_one ok=True elapsed_ms=235.66 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(1,)
+2026-06-06 18:27:10,546 | INFO | operation=pool_putconn ok=True elapsed_ms=117.56 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:27:13,565 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:27:13,933 | INFO | operation=execute ok=True elapsed_ms=367.50 rows=-1 sql=CREATE TABLE IF NOT EXISTS clientes ( id SERIAL PRIMARY KEY, nome VARCHAR(200) NOT NULL, documento VARCHAR(20), telefone VARCHAR(20), email VARCHAR(150), endereco TEXT, cidade VARCHAR(100), estado CHAR(2), observacoes TEXT, criado_em TIMESTAMP DEFAULT NOW(), atualizado_em TIMESTAMP DEFAULT NOW() ); params=()
+2026-06-06 18:27:14,175 | INFO | operation=query_one ok=True elapsed_ms=241.53 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 18:27:14,296 | INFO | operation=pool_putconn ok=True elapsed_ms=118.23 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:27:28,482 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:27:28,843 | INFO | operation=execute ok=True elapsed_ms=359.84 rows=-1 sql=CREATE TABLE IF NOT EXISTS cotacoes ( id SERIAL PRIMARY KEY, chapas_json TEXT NOT NULL, fitas_json TEXT NOT NULL, outros_json TEXT NOT NULL, desperdicio_pct NUMERIC(6,2) DEFAULT 0, aproveitamento_pct NUMERIC(6,2) DEFAULT 0, total_chapas NUMERIC(12,2) DEFAULT 0, total_fitas NUMERIC(12,2) DEFAULT 0, total_outros NUMERIC(12,2) DEFAULT 0, total_geral NUMERIC(12,2) DEFAULT 0, observacoes TEXT, cliente_id INTEGER, nome_projeto VARCHAR(200), previsao_entrega VARCHAR(20), desconto_global NUMERIC(6,2) DEFAULT 0, criado_em TIMESTAMP DEFAULT NOW() ); -- Adiciona colunas se a tabela ja existir (migracao segura) ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS cliente_id INTEGER; ALTER TABLE cotacoes ADD... params=()
+2026-06-06 18:27:29,080 | INFO | operation=query_one ok=True elapsed_ms=236.72 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(6,)
+2026-06-06 18:27:29,203 | INFO | operation=pool_putconn ok=True elapsed_ms=117.67 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:27:31,560 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:27:31,921 | INFO | operation=execute ok=True elapsed_ms=360.25 rows=-1 sql=CREATE TABLE IF NOT EXISTS clientes ( id SERIAL PRIMARY KEY, nome VARCHAR(200) NOT NULL, documento VARCHAR(20), telefone VARCHAR(20), email VARCHAR(150), endereco TEXT, cidade VARCHAR(100), estado CHAR(2), observacoes TEXT, criado_em TIMESTAMP DEFAULT NOW(), atualizado_em TIMESTAMP DEFAULT NOW() ); params=()
+2026-06-06 18:27:32,158 | INFO | operation=query_one ok=True elapsed_ms=237.08 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 18:27:32,277 | INFO | operation=pool_putconn ok=True elapsed_ms=117.70 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:28:04,456 | INFO | operation=pool_getconn ok=True elapsed_ms=0.03 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:28:04,821 | INFO | operation=execute ok=True elapsed_ms=363.31 rows=-1 sql=CREATE TABLE IF NOT EXISTS cotacoes ( id SERIAL PRIMARY KEY, chapas_json TEXT NOT NULL, fitas_json TEXT NOT NULL, outros_json TEXT NOT NULL, desperdicio_pct NUMERIC(6,2) DEFAULT 0, aproveitamento_pct NUMERIC(6,2) DEFAULT 0, total_chapas NUMERIC(12,2) DEFAULT 0, total_fitas NUMERIC(12,2) DEFAULT 0, total_outros NUMERIC(12,2) DEFAULT 0, total_geral NUMERIC(12,2) DEFAULT 0, observacoes TEXT, cliente_id INTEGER, nome_projeto VARCHAR(200), previsao_entrega VARCHAR(20), desconto_global NUMERIC(6,2) DEFAULT 0, criado_em TIMESTAMP DEFAULT NOW() ); -- Adiciona colunas se a tabela ja existir (migracao segura) ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS cliente_id INTEGER; ALTER TABLE cotacoes ADD... params=()
+2026-06-06 18:28:05,063 | INFO | operation=query_one ok=True elapsed_ms=240.85 rows=1 sql=SELECT id FROM cotacoes WHERE id = %s params=(6,)
+2026-06-06 18:28:05,303 | INFO | operation=execute ok=True elapsed_ms=240.25 rows=1 sql=UPDATE cotacoes SET desconto_global = %s WHERE id = %s params=(25.0, 6)
+2026-06-06 18:28:05,544 | INFO | operation=query_one ok=True elapsed_ms=240.43 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(6,)
+2026-06-06 18:28:05,670 | INFO | operation=pool_putconn ok=True elapsed_ms=120.22 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:28:08,554 | INFO | operation=pool_getconn ok=True elapsed_ms=0.02 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:28:08,913 | INFO | operation=execute ok=True elapsed_ms=358.34 rows=-1 sql=CREATE TABLE IF NOT EXISTS cotacoes ( id SERIAL PRIMARY KEY, chapas_json TEXT NOT NULL, fitas_json TEXT NOT NULL, outros_json TEXT NOT NULL, desperdicio_pct NUMERIC(6,2) DEFAULT 0, aproveitamento_pct NUMERIC(6,2) DEFAULT 0, total_chapas NUMERIC(12,2) DEFAULT 0, total_fitas NUMERIC(12,2) DEFAULT 0, total_outros NUMERIC(12,2) DEFAULT 0, total_geral NUMERIC(12,2) DEFAULT 0, observacoes TEXT, cliente_id INTEGER, nome_projeto VARCHAR(200), previsao_entrega VARCHAR(20), desconto_global NUMERIC(6,2) DEFAULT 0, criado_em TIMESTAMP DEFAULT NOW() ); -- Adiciona colunas se a tabela ja existir (migracao segura) ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS cliente_id INTEGER; ALTER TABLE cotacoes ADD... params=()
+2026-06-06 18:28:09,154 | INFO | operation=query_one ok=True elapsed_ms=240.48 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(1,)
+2026-06-06 18:28:09,280 | INFO | operation=pool_putconn ok=True elapsed_ms=122.52 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:28:12,159 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:28:12,515 | INFO | operation=execute ok=True elapsed_ms=355.13 rows=-1 sql=CREATE TABLE IF NOT EXISTS clientes ( id SERIAL PRIMARY KEY, nome VARCHAR(200) NOT NULL, documento VARCHAR(20), telefone VARCHAR(20), email VARCHAR(150), endereco TEXT, cidade VARCHAR(100), estado CHAR(2), observacoes TEXT, criado_em TIMESTAMP DEFAULT NOW(), atualizado_em TIMESTAMP DEFAULT NOW() ); params=()
+2026-06-06 18:28:12,751 | INFO | operation=query_one ok=True elapsed_ms=236.20 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 18:28:12,874 | INFO | operation=pool_putconn ok=True elapsed_ms=120.89 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:28:15,479 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:28:15,838 | INFO | operation=execute ok=True elapsed_ms=357.37 rows=-1 sql=CREATE TABLE IF NOT EXISTS cotacoes ( id SERIAL PRIMARY KEY, chapas_json TEXT NOT NULL, fitas_json TEXT NOT NULL, outros_json TEXT NOT NULL, desperdicio_pct NUMERIC(6,2) DEFAULT 0, aproveitamento_pct NUMERIC(6,2) DEFAULT 0, total_chapas NUMERIC(12,2) DEFAULT 0, total_fitas NUMERIC(12,2) DEFAULT 0, total_outros NUMERIC(12,2) DEFAULT 0, total_geral NUMERIC(12,2) DEFAULT 0, observacoes TEXT, cliente_id INTEGER, nome_projeto VARCHAR(200), previsao_entrega VARCHAR(20), desconto_global NUMERIC(6,2) DEFAULT 0, criado_em TIMESTAMP DEFAULT NOW() ); -- Adiciona colunas se a tabela ja existir (migracao segura) ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS cliente_id INTEGER; ALTER TABLE cotacoes ADD... params=()
+2026-06-06 18:28:16,076 | INFO | operation=query_one ok=True elapsed_ms=237.99 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(1,)
+2026-06-06 18:28:16,202 | INFO | operation=pool_putconn ok=True elapsed_ms=122.96 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:28:19,085 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:28:19,444 | INFO | operation=execute ok=True elapsed_ms=358.28 rows=-1 sql=CREATE TABLE IF NOT EXISTS clientes ( id SERIAL PRIMARY KEY, nome VARCHAR(200) NOT NULL, documento VARCHAR(20), telefone VARCHAR(20), email VARCHAR(150), endereco TEXT, cidade VARCHAR(100), estado CHAR(2), observacoes TEXT, criado_em TIMESTAMP DEFAULT NOW(), atualizado_em TIMESTAMP DEFAULT NOW() ); params=()
+2026-06-06 18:28:19,681 | INFO | operation=query_one ok=True elapsed_ms=236.17 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 18:28:19,803 | INFO | operation=pool_putconn ok=True elapsed_ms=118.62 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:28:32,676 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:28:33,031 | INFO | operation=execute ok=True elapsed_ms=354.72 rows=-1 sql=CREATE TABLE IF NOT EXISTS cotacoes ( id SERIAL PRIMARY KEY, chapas_json TEXT NOT NULL, fitas_json TEXT NOT NULL, outros_json TEXT NOT NULL, desperdicio_pct NUMERIC(6,2) DEFAULT 0, aproveitamento_pct NUMERIC(6,2) DEFAULT 0, total_chapas NUMERIC(12,2) DEFAULT 0, total_fitas NUMERIC(12,2) DEFAULT 0, total_outros NUMERIC(12,2) DEFAULT 0, total_geral NUMERIC(12,2) DEFAULT 0, observacoes TEXT, cliente_id INTEGER, nome_projeto VARCHAR(200), previsao_entrega VARCHAR(20), desconto_global NUMERIC(6,2) DEFAULT 0, criado_em TIMESTAMP DEFAULT NOW() ); -- Adiciona colunas se a tabela ja existir (migracao segura) ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS cliente_id INTEGER; ALTER TABLE cotacoes ADD... params=()
+2026-06-06 18:28:33,276 | INFO | operation=query_one ok=True elapsed_ms=244.29 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(2,)
+2026-06-06 18:28:33,399 | INFO | operation=pool_putconn ok=True elapsed_ms=119.97 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:28:33,947 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:28:34,190 | INFO | operation=query_one ok=True elapsed_ms=241.63 rows=1 sql=SELECT version() AS v params=()
+2026-06-06 18:28:34,311 | INFO | operation=pool_putconn ok=True elapsed_ms=117.97 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:28:34,329 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:28:34,685 | INFO | operation=execute ok=True elapsed_ms=355.01 rows=-1 sql=CREATE TABLE IF NOT EXISTS cotacoes ( id SERIAL PRIMARY KEY, chapas_json TEXT NOT NULL, fitas_json TEXT NOT NULL, outros_json TEXT NOT NULL, desperdicio_pct NUMERIC(6,2) DEFAULT 0, aproveitamento_pct NUMERIC(6,2) DEFAULT 0, total_chapas NUMERIC(12,2) DEFAULT 0, total_fitas NUMERIC(12,2) DEFAULT 0, total_outros NUMERIC(12,2) DEFAULT 0, total_geral NUMERIC(12,2) DEFAULT 0, observacoes TEXT, cliente_id INTEGER, nome_projeto VARCHAR(200), previsao_entrega VARCHAR(20), desconto_global NUMERIC(6,2) DEFAULT 0, criado_em TIMESTAMP DEFAULT NOW() ); -- Adiciona colunas se a tabela ja existir (migracao segura) ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS cliente_id INTEGER; ALTER TABLE cotacoes ADD... params=()
+2026-06-06 18:28:34,927 | INFO | operation=count ok=True elapsed_ms=242.35 rows=1 sql=SELECT COUNT(*) FROM cotacoes WHERE cliente_id = %s params=[1]
+2026-06-06 18:28:35,048 | INFO | operation=query ok=True elapsed_ms=120.44 rows=5 sql=SELECT id, total_geral, total_chapas, total_fitas, total_outros, aproveitamento_pct, desconto_global, cliente_id, nome_projeto, criado_em FROM cotacoes WHERE cliente_id = %s ORDER BY criado_em DESC LIMIT %s OFFSET %s params=[1, 100, 0]
+2026-06-06 18:28:35,168 | INFO | operation=pool_putconn ok=True elapsed_ms=117.84 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:28:36,319 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:28:36,676 | INFO | operation=execute ok=True elapsed_ms=355.60 rows=-1 sql=CREATE TABLE IF NOT EXISTS clientes ( id SERIAL PRIMARY KEY, nome VARCHAR(200) NOT NULL, documento VARCHAR(20), telefone VARCHAR(20), email VARCHAR(150), endereco TEXT, cidade VARCHAR(100), estado CHAR(2), observacoes TEXT, criado_em TIMESTAMP DEFAULT NOW(), atualizado_em TIMESTAMP DEFAULT NOW() ); params=()
+2026-06-06 18:28:36,912 | INFO | operation=query_one ok=True elapsed_ms=235.65 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 18:28:37,033 | INFO | operation=pool_putconn ok=True elapsed_ms=118.10 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:28:48,679 | INFO | operation=pool_getconn ok=True elapsed_ms=0.07 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:28:49,045 | INFO | operation=execute ok=True elapsed_ms=363.84 rows=-1 sql=CREATE TABLE IF NOT EXISTS cotacoes ( id SERIAL PRIMARY KEY, chapas_json TEXT NOT NULL, fitas_json TEXT NOT NULL, outros_json TEXT NOT NULL, desperdicio_pct NUMERIC(6,2) DEFAULT 0, aproveitamento_pct NUMERIC(6,2) DEFAULT 0, total_chapas NUMERIC(12,2) DEFAULT 0, total_fitas NUMERIC(12,2) DEFAULT 0, total_outros NUMERIC(12,2) DEFAULT 0, total_geral NUMERIC(12,2) DEFAULT 0, observacoes TEXT, cliente_id INTEGER, nome_projeto VARCHAR(200), previsao_entrega VARCHAR(20), desconto_global NUMERIC(6,2) DEFAULT 0, criado_em TIMESTAMP DEFAULT NOW() ); -- Adiciona colunas se a tabela ja existir (migracao segura) ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS cliente_id INTEGER; ALTER TABLE cotacoes ADD... params=()
+2026-06-06 18:28:49,284 | INFO | operation=query_one ok=True elapsed_ms=238.34 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(6,)
+2026-06-06 18:28:49,408 | INFO | operation=pool_putconn ok=True elapsed_ms=120.25 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:28:52,410 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:28:52,765 | INFO | operation=execute ok=True elapsed_ms=353.93 rows=-1 sql=CREATE TABLE IF NOT EXISTS clientes ( id SERIAL PRIMARY KEY, nome VARCHAR(200) NOT NULL, documento VARCHAR(20), telefone VARCHAR(20), email VARCHAR(150), endereco TEXT, cidade VARCHAR(100), estado CHAR(2), observacoes TEXT, criado_em TIMESTAMP DEFAULT NOW(), atualizado_em TIMESTAMP DEFAULT NOW() ); params=()
+2026-06-06 18:28:53,003 | INFO | operation=query_one ok=True elapsed_ms=238.14 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 18:28:53,123 | INFO | operation=pool_putconn ok=True elapsed_ms=118.02 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:29:02,549 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:29:02,787 | INFO | operation=query_one ok=True elapsed_ms=237.60 rows=1 sql=SELECT version() AS v params=()
+2026-06-06 18:29:02,908 | INFO | operation=pool_putconn ok=True elapsed_ms=119.52 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:29:48,905 | INFO | operation=pool_getconn ok=True elapsed_ms=0.02 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:29:49,271 | INFO | operation=execute ok=True elapsed_ms=363.24 rows=-1 sql=CREATE TABLE IF NOT EXISTS cotacoes ( id SERIAL PRIMARY KEY, chapas_json TEXT NOT NULL, fitas_json TEXT NOT NULL, outros_json TEXT NOT NULL, desperdicio_pct NUMERIC(6,2) DEFAULT 0, aproveitamento_pct NUMERIC(6,2) DEFAULT 0, total_chapas NUMERIC(12,2) DEFAULT 0, total_fitas NUMERIC(12,2) DEFAULT 0, total_outros NUMERIC(12,2) DEFAULT 0, total_geral NUMERIC(12,2) DEFAULT 0, observacoes TEXT, cliente_id INTEGER, nome_projeto VARCHAR(200), previsao_entrega VARCHAR(20), desconto_global NUMERIC(6,2) DEFAULT 0, criado_em TIMESTAMP DEFAULT NOW() ); -- Adiciona colunas se a tabela ja existir (migracao segura) ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS cliente_id INTEGER; ALTER TABLE cotacoes ADD... params=()
+2026-06-06 18:29:49,510 | INFO | operation=count ok=True elapsed_ms=238.80 rows=1 sql=SELECT COUNT(*) FROM cotacoes WHERE cliente_id = %s params=[1]
+2026-06-06 18:29:49,521 | INFO | operation=pool_getconn ok=True elapsed_ms=0.02 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:29:49,631 | INFO | operation=query ok=True elapsed_ms=120.90 rows=5 sql=SELECT id, total_geral, total_chapas, total_fitas, total_outros, aproveitamento_pct, desconto_global, cliente_id, nome_projeto, criado_em FROM cotacoes WHERE cliente_id = %s ORDER BY criado_em DESC LIMIT %s OFFSET %s params=[1, 100, 0]
+2026-06-06 18:29:49,763 | INFO | operation=pool_putconn ok=True elapsed_ms=122.74 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:29:49,763 | INFO | operation=pool_getconn ok=True elapsed_ms=38.18 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:29:49,888 | INFO | operation=execute ok=True elapsed_ms=365.59 rows=-1 sql=CREATE TABLE IF NOT EXISTS clientes ( id SERIAL PRIMARY KEY, nome VARCHAR(200) NOT NULL, documento VARCHAR(20), telefone VARCHAR(20), email VARCHAR(150), endereco TEXT, cidade VARCHAR(100), estado CHAR(2), observacoes TEXT, criado_em TIMESTAMP DEFAULT NOW(), atualizado_em TIMESTAMP DEFAULT NOW() ); params=()
+2026-06-06 18:29:50,012 | INFO | operation=count ok=True elapsed_ms=247.33 rows=1 sql=SELECT COUNT(*) FROM cotacoes WHERE cliente_id = %s params=[1]
+2026-06-06 18:29:50,132 | INFO | operation=query_one ok=True elapsed_ms=243.52 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 18:29:50,133 | INFO | operation=query ok=True elapsed_ms=120.12 rows=5 sql=SELECT id, total_geral, total_chapas, total_fitas, total_outros, aproveitamento_pct, desconto_global, cliente_id, nome_projeto, criado_em FROM cotacoes WHERE cliente_id = %s ORDER BY criado_em DESC LIMIT %s OFFSET %s params=[1, 100, 0]
+2026-06-06 18:29:50,261 | INFO | operation=pool_putconn ok=True elapsed_ms=121.15 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:29:50,384 | INFO | operation=pool_putconn ok=True elapsed_ms=244.20 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:29:50,384 | INFO | operation=pool_getconn ok=True elapsed_ms=155.67 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:29:50,627 | INFO | operation=query_one ok=True elapsed_ms=240.97 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 18:29:50,749 | INFO | operation=pool_putconn ok=True elapsed_ms=119.22 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:30:49,825 | INFO | operation=pool_getconn ok=True elapsed_ms=0.04 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:30:50,067 | INFO | operation=query_one ok=True elapsed_ms=239.82 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(6,)
+2026-06-06 18:30:50,193 | INFO | operation=pool_putconn ok=True elapsed_ms=120.51 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:30:50,193 | INFO | operation=pool_getconn ok=True elapsed_ms=73.69 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:30:50,437 | INFO | operation=query_one ok=True elapsed_ms=241.72 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(6,)
+2026-06-06 18:30:50,558 | INFO | operation=pool_putconn ok=True elapsed_ms=117.99 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:31:08,430 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:31:08,666 | INFO | operation=query_one ok=True elapsed_ms=235.36 rows=1 sql=SELECT version() AS v params=()
+2026-06-06 18:31:08,787 | INFO | operation=pool_putconn ok=True elapsed_ms=118.58 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:31:09,333 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:31:09,572 | INFO | operation=query_one ok=True elapsed_ms=238.57 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(6,)
+2026-06-06 18:31:09,694 | INFO | operation=pool_putconn ok=True elapsed_ms=118.73 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:33:47,185 | INFO | operation=pool_getconn ok=True elapsed_ms=0.21 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:33:47,445 | INFO | operation=query ok=True elapsed_ms=252.93 rows=5 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=[0.01, 5, 0]
+2026-06-06 18:33:47,585 | INFO | operation=pool_putconn ok=True elapsed_ms=118.21 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:33:47,596 | INFO | operation=pool_getconn ok=True elapsed_ms=0.02 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:33:47,849 | INFO | operation=query ok=True elapsed_ms=251.60 rows=5 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT f.id, f.nome, m.nome AS marca, f.tamanho_rolo_m, f.valor, f.valor_m_linear, fo.nome AS fornecedor, f.criado_em, f.atualizado_em FROM fitas_borda f LEFT JOIN marcas m ON m.id = f.marca_id LEFT JOIN fornecedores fo ON fo.id = f.fornecedor_id WHERE f.tamanho_rolo_m >= %s AND f.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=[1.0, 0.01, 5, 0]
+2026-06-06 18:33:47,975 | INFO | operation=pool_putconn ok=True elapsed_ms=119.07 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:33:47,975 | INFO | operation=pool_getconn ok=True elapsed_ms=55.82 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:33:48,227 | INFO | operation=query ok=True elapsed_ms=248.73 rows=5 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT f.id, f.nome, m.nome AS marca, f.valor, fo.nome AS fornecedor, f.criado_em, f.atualizado_em FROM ferragens f LEFT JOIN marcas m ON m.id = f.marca_id LEFT JOIN fornecedores fo ON fo.id = f.fornecedor_id ) q ORDER BY q.nome LIMIT %s OFFSET %s params=[5, 0]
+2026-06-06 18:33:48,350 | INFO | operation=pool_putconn ok=True elapsed_ms=118.45 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:33:48,351 | INFO | operation=pool_getconn ok=True elapsed_ms=64.09 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:33:48,712 | INFO | operation=execute ok=True elapsed_ms=358.78 rows=-1 sql=CREATE TABLE IF NOT EXISTS clientes ( id SERIAL PRIMARY KEY, nome VARCHAR(200) NOT NULL, documento VARCHAR(20), telefone VARCHAR(20), email VARCHAR(150), endereco TEXT, cidade VARCHAR(100), estado CHAR(2), observacoes TEXT, criado_em TIMESTAMP DEFAULT NOW(), atualizado_em TIMESTAMP DEFAULT NOW() ); params=()
+2026-06-06 18:33:48,952 | INFO | operation=query ok=True elapsed_ms=239.30 rows=1 sql=SELECT id, nome, documento, cidade, estado, telefone, COUNT(*) OVER() AS total_count FROM clientes ORDER BY nome LIMIT %s OFFSET %s params=[5, 0]
+2026-06-06 18:33:49,076 | INFO | operation=pool_putconn ok=True elapsed_ms=118.03 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:33:49,076 | INFO | operation=pool_getconn ok=True elapsed_ms=68.30 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:33:49,441 | INFO | operation=execute ok=True elapsed_ms=361.47 rows=-1 sql=CREATE TABLE IF NOT EXISTS cotacoes ( id SERIAL PRIMARY KEY, chapas_json TEXT NOT NULL, fitas_json TEXT NOT NULL, outros_json TEXT NOT NULL, desperdicio_pct NUMERIC(6,2) DEFAULT 0, aproveitamento_pct NUMERIC(6,2) DEFAULT 0, total_chapas NUMERIC(12,2) DEFAULT 0, total_fitas NUMERIC(12,2) DEFAULT 0, total_outros NUMERIC(12,2) DEFAULT 0, total_geral NUMERIC(12,2) DEFAULT 0, observacoes TEXT, cliente_id INTEGER, nome_projeto VARCHAR(200), previsao_entrega VARCHAR(20), desconto_global NUMERIC(6,2) DEFAULT 0, criado_em TIMESTAMP DEFAULT NOW() ); -- Adiciona colunas se a tabela ja existir (migracao segura) ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS cliente_id INTEGER; ALTER TABLE cotacoes ADD... params=()
+2026-06-06 18:33:49,679 | INFO | operation=query ok=True elapsed_ms=237.02 rows=5 sql=SELECT id, total_geral, total_chapas, total_fitas, total_outros, aproveitamento_pct, desconto_global, cliente_id, nome_projeto, criado_em, COUNT(*) OVER() AS total_count FROM cotacoes WHERE cliente_id = %s ORDER BY criado_em DESC LIMIT %s OFFSET %s params=[1, 100, 0]
+2026-06-06 18:33:49,799 | INFO | operation=pool_putconn ok=True elapsed_ms=117.83 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:34:06,956 | INFO | operation=pool_getconn ok=True elapsed_ms=0.11 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:34:07,214 | INFO | operation=query ok=True elapsed_ms=254.85 rows=1 sql=SELECT id, nome, documento, cidade, estado, telefone, COUNT(*) OVER() AS total_count FROM clientes ORDER BY nome LIMIT %s OFFSET %s params=[5, 0]
+2026-06-06 18:34:07,338 | INFO | operation=pool_putconn ok=True elapsed_ms=118.68 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:34:07,338 | INFO | operation=pool_getconn ok=True elapsed_ms=59.64 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:34:07,579 | INFO | operation=query ok=True elapsed_ms=238.69 rows=5 sql=SELECT id, total_geral, total_chapas, total_fitas, total_outros, aproveitamento_pct, desconto_global, cliente_id, nome_projeto, criado_em, COUNT(*) OVER() AS total_count FROM cotacoes WHERE cliente_id = %s ORDER BY criado_em DESC LIMIT %s OFFSET %s params=[1, 100, 0]
+2026-06-06 18:34:07,701 | INFO | operation=pool_putconn ok=True elapsed_ms=117.87 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:34:07,702 | INFO | operation=pool_getconn ok=True elapsed_ms=80.18 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:34:07,954 | INFO | operation=query ok=True elapsed_ms=249.56 rows=5 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=[0.01, 5, 0]
+2026-06-06 18:34:08,077 | INFO | operation=pool_putconn ok=True elapsed_ms=117.72 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:34:08,077 | INFO | operation=pool_getconn ok=True elapsed_ms=89.09 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:34:08,328 | INFO | operation=query ok=True elapsed_ms=248.38 rows=5 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT f.id, f.nome, m.nome AS marca, f.tamanho_rolo_m, f.valor, f.valor_m_linear, fo.nome AS fornecedor, f.criado_em, f.atualizado_em FROM fitas_borda f LEFT JOIN marcas m ON m.id = f.marca_id LEFT JOIN fornecedores fo ON fo.id = f.fornecedor_id WHERE f.tamanho_rolo_m >= %s AND f.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=[1.0, 0.01, 5, 0]
+2026-06-06 18:34:08,449 | INFO | operation=pool_putconn ok=True elapsed_ms=118.17 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:34:36,031 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:34:36,281 | INFO | operation=query_one ok=True elapsed_ms=246.88 rows=1 sql=SELECT version() AS v params=()
+2026-06-06 18:34:36,424 | INFO | operation=pool_putconn ok=True elapsed_ms=125.91 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:35:00,645 | INFO | operation=pool_getconn ok=True elapsed_ms=0.05 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:35:00,767 | INFO | operation=execute ok=True elapsed_ms=119.66 rows=-1 sql=CREATE TABLE IF NOT EXISTS clientes ( id SERIAL PRIMARY KEY, nome VARCHAR(200) NOT NULL, documento VARCHAR(20), telefone VARCHAR(20), email VARCHAR(150), endereco TEXT, cidade VARCHAR(100), estado CHAR(2), observacoes TEXT, criado_em TIMESTAMP DEFAULT NOW(), atualizado_em TIMESTAMP DEFAULT NOW() ); params=()
+2026-06-06 18:35:00,888 | INFO | operation=query ok=True elapsed_ms=120.23 rows=1 sql=SELECT id, nome, documento, cidade, estado, telefone, COUNT(*) OVER() AS total_count FROM clientes ORDER BY nome LIMIT %s OFFSET %s params=[50, 0]
+2026-06-06 18:35:00,891 | INFO | operation=pool_putconn ok=True elapsed_ms=0.03 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:35:04,947 | INFO | operation=pool_getconn ok=True elapsed_ms=0.04 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:35:05,071 | INFO | operation=execute ok=True elapsed_ms=122.13 rows=-1 sql=CREATE TABLE IF NOT EXISTS cotacoes ( id SERIAL PRIMARY KEY, chapas_json TEXT NOT NULL, fitas_json TEXT NOT NULL, outros_json TEXT NOT NULL, desperdicio_pct NUMERIC(6,2) DEFAULT 0, aproveitamento_pct NUMERIC(6,2) DEFAULT 0, total_chapas NUMERIC(12,2) DEFAULT 0, total_fitas NUMERIC(12,2) DEFAULT 0, total_outros NUMERIC(12,2) DEFAULT 0, total_geral NUMERIC(12,2) DEFAULT 0, observacoes TEXT, cliente_id INTEGER, nome_projeto VARCHAR(200), previsao_entrega VARCHAR(20), desconto_global NUMERIC(6,2) DEFAULT 0, criado_em TIMESTAMP DEFAULT NOW() ); -- Adiciona colunas se a tabela ja existir (migracao segura) ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS cliente_id INTEGER; ALTER TABLE cotacoes ADD... params=()
+2026-06-06 18:35:05,192 | INFO | operation=query ok=True elapsed_ms=120.36 rows=5 sql=SELECT id, total_geral, total_chapas, total_fitas, total_outros, aproveitamento_pct, desconto_global, cliente_id, nome_projeto, criado_em, COUNT(*) OVER() AS total_count FROM cotacoes WHERE cliente_id = %s ORDER BY criado_em DESC LIMIT %s OFFSET %s params=[1, 100, 0]
+2026-06-06 18:35:05,206 | INFO | operation=pool_putconn ok=True elapsed_ms=0.08 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:35:05,221 | INFO | operation=pool_getconn ok=True elapsed_ms=0.03 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:35:05,349 | INFO | operation=query_one ok=True elapsed_ms=126.30 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 18:35:05,357 | INFO | operation=pool_putconn ok=True elapsed_ms=0.05 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:35:06,599 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:35:06,718 | INFO | operation=query_one ok=True elapsed_ms=118.89 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(1,)
+2026-06-06 18:35:06,724 | INFO | operation=pool_putconn ok=True elapsed_ms=0.05 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:35:07,654 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:35:07,765 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:35:07,773 | INFO | operation=query_one ok=True elapsed_ms=118.44 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 18:35:07,776 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:35:07,886 | INFO | operation=query ok=True elapsed_ms=119.77 rows=1 sql=SELECT id, nome, documento, cidade, estado, telefone, COUNT(*) OVER() AS total_count FROM clientes ORDER BY nome LIMIT %s OFFSET %s params=[5, 0]
+2026-06-06 18:35:07,888 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:35:07,957 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:35:08,083 | INFO | operation=query ok=True elapsed_ms=124.64 rows=5 sql=SELECT id, total_geral, total_chapas, total_fitas, total_outros, aproveitamento_pct, desconto_global, cliente_id, nome_projeto, criado_em, COUNT(*) OVER() AS total_count FROM cotacoes WHERE cliente_id = %s ORDER BY criado_em DESC LIMIT %s OFFSET %s params=[1, 100, 0]
+2026-06-06 18:35:08,090 | INFO | operation=pool_putconn ok=True elapsed_ms=0.05 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:35:08,137 | INFO | operation=pool_getconn ok=True elapsed_ms=0.02 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:35:08,257 | INFO | operation=query_one ok=True elapsed_ms=118.34 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(6,)
+2026-06-06 18:35:08,261 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:35:08,304 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:35:08,432 | INFO | operation=query ok=True elapsed_ms=126.32 rows=5 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=[0.01, 5, 0]
+2026-06-06 18:35:08,436 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:35:16,203 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:35:16,324 | INFO | operation=query_one ok=True elapsed_ms=119.92 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(6,)
+2026-06-06 18:35:16,328 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:35:17,622 | INFO | operation=pool_getconn ok=True elapsed_ms=0.07 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:35:17,756 | INFO | operation=query_one ok=True elapsed_ms=128.71 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 18:35:17,761 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:35:26,279 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:35:26,401 | INFO | operation=query_one ok=True elapsed_ms=120.68 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(6,)
+2026-06-06 18:35:26,403 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:35:54,509 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:35:54,630 | INFO | operation=query_one ok=True elapsed_ms=119.63 rows=1 sql=SELECT id FROM cotacoes WHERE id = %s params=(6,)
+2026-06-06 18:35:54,750 | INFO | operation=execute ok=True elapsed_ms=119.43 rows=1 sql=UPDATE cotacoes SET desconto_global = %s WHERE id = %s params=(35.0, 6)
+2026-06-06 18:35:54,869 | INFO | operation=query_one ok=True elapsed_ms=118.74 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(6,)
+2026-06-06 18:35:54,870 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:35:55,595 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:35:55,714 | INFO | operation=query_one ok=True elapsed_ms=118.05 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(1,)
+2026-06-06 18:35:55,715 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:35:56,291 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:35:56,410 | INFO | operation=query_one ok=True elapsed_ms=118.51 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 18:35:56,412 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:35:57,067 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:35:57,185 | INFO | operation=query_one ok=True elapsed_ms=117.85 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(1,)
+2026-06-06 18:35:57,188 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:35:57,732 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:35:57,851 | INFO | operation=query_one ok=True elapsed_ms=118.17 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 18:35:57,853 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:35:58,638 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:35:58,757 | INFO | operation=query_one ok=True elapsed_ms=118.51 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(6,)
+2026-06-06 18:35:58,760 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:35:59,310 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:35:59,429 | INFO | operation=query_one ok=True elapsed_ms=118.29 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 18:35:59,431 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:35:59,789 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:35:59,908 | INFO | operation=query_one ok=True elapsed_ms=118.80 rows=0 sql=SELECT * FROM clientes WHERE id = %s params=(999999,)
+2026-06-06 18:35:59,910 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:36:00,911 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:36:01,031 | INFO | operation=query_one ok=True elapsed_ms=118.88 rows=0 sql=SELECT * FROM clientes WHERE id = %s params=(999999,)
+2026-06-06 18:36:01,032 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:36:06,902 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:36:07,030 | INFO | operation=query ok=True elapsed_ms=127.36 rows=5 sql=SELECT id, total_geral, total_chapas, total_fitas, total_outros, aproveitamento_pct, desconto_global, cliente_id, nome_projeto, criado_em, COUNT(*) OVER() AS total_count FROM cotacoes WHERE cliente_id = %s ORDER BY criado_em DESC LIMIT %s OFFSET %s params=[1, 100, 0]
+2026-06-06 18:36:07,032 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:36:07,045 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:36:07,166 | INFO | operation=query_one ok=True elapsed_ms=119.32 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 18:36:07,168 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:36:07,942 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:36:08,064 | INFO | operation=query_one ok=True elapsed_ms=121.95 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(1,)
+2026-06-06 18:36:08,066 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:36:08,705 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:36:08,825 | INFO | operation=query_one ok=True elapsed_ms=119.74 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 18:36:08,827 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:36:11,604 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:36:11,724 | INFO | operation=query_one ok=True elapsed_ms=119.22 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(2,)
+2026-06-06 18:36:11,729 | INFO | operation=pool_putconn ok=True elapsed_ms=0.03 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:36:12,684 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:36:12,805 | INFO | operation=query_one ok=True elapsed_ms=119.57 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 18:36:12,807 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:36:30,367 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:36:30,537 | INFO | operation=query_one ok=True elapsed_ms=169.04 rows=1 sql=SELECT version() AS v params=()
+2026-06-06 18:36:30,539 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:37:12,784 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:37:12,911 | INFO | operation=query ok=True elapsed_ms=125.81 rows=3 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.nome ILIKE %s AND c.espessura_mm >= %s AND c.espessura_mm <= %s AND c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%MARSALA%', 14.5, 15.5, 0.01, 30, 0]
+2026-06-06 18:37:12,914 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:37:27,130 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:37:27,259 | INFO | operation=query ok=True elapsed_ms=127.66 rows=3 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.nome ILIKE %s AND c.espessura_mm >= %s AND c.espessura_mm <= %s AND c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%MARSALA%', 5.5, 6.5, 0.01, 30, 0]
+2026-06-06 18:37:27,262 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:37:41,708 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:37:41,835 | INFO | operation=query ok=True elapsed_ms=126.85 rows=15 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT f.id, f.nome, m.nome AS marca, f.tamanho_rolo_m, f.valor, f.valor_m_linear, fo.nome AS fornecedor, f.criado_em, f.atualizado_em FROM fitas_borda f LEFT JOIN marcas m ON m.id = f.marca_id LEFT JOIN fornecedores fo ON fo.id = f.fornecedor_id WHERE f.nome ILIKE %s AND f.tamanho_rolo_m >= %s AND f.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%MARSALA%', 1.0, 0.01, 100, 0]
+2026-06-06 18:37:41,837 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:40:41,749 | INFO | operation=pool_getconn ok=True elapsed_ms=0.34 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:40:41,874 | INFO | operation=execute ok=True elapsed_ms=122.04 rows=1 sql=INSERT INTO clientes (nome, documento, telefone, email, endereco, cidade, estado, observacoes) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id, criado_em, atualizado_em params=('LARISSA SOUMAILI', '100.164.030-61', '11999999999', 'TESTE@TESTE.COM', '', 'SAO PAULO', 'SP', '')
+2026-06-06 18:40:41,995 | INFO | operation=query_one ok=True elapsed_ms=120.43 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 18:40:42,002 | INFO | operation=pool_putconn ok=True elapsed_ms=0.11 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:41:06,601 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:41:06,724 | INFO | operation=execute ok=True elapsed_ms=120.98 rows=1 sql=INSERT INTO cotacoes (chapas_json, fitas_json, outros_json, desperdicio_pct, aproveitamento_pct, total_chapas, total_fitas, total_outros, total_geral, observacoes, cliente_id, nome_projeto, previsao_entrega, desconto_global) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id, criado_em params=('[{"espessura_mm": 15.0, "produto": "MDF BP Matt Marsala 02 Faces 2.750 x 1.850 x 15mm Guararapes", "quantidade": 2, "valor_unit": 530.44, "subtotal": 1270.93}, {"espessura_mm": 6.0, "produto": "MDF BP Misto Matt Marsala/Branco 2.750 x 1.850 x 06mm Guararapes", "quantidade": 1, "valor_unit": 386.33, "subtotal": 462.823}]', '[{"produto": "Fita de Borda PVC Essencial Wood Rovere Marsala Duratex 22x0,45mm Rolo 20m", "metros_total": 54.28, "valor_m": 2.2365, "subtotal": 121.397}]', '{"ferragem":...
+2026-06-06 18:41:06,848 | INFO | operation=query_one ok=True elapsed_ms=122.79 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(7,)
+2026-06-06 18:41:06,850 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:41:12,940 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:41:13,059 | INFO | operation=query_one ok=True elapsed_ms=117.76 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 18:41:13,061 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:42:37,652 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:42:37,772 | INFO | operation=execute ok=True elapsed_ms=119.87 rows=1 sql=INSERT INTO cotacoes (chapas_json, fitas_json, outros_json, desperdicio_pct, aproveitamento_pct, total_chapas, total_fitas, total_outros, total_geral, observacoes, cliente_id, nome_projeto, previsao_entrega, desconto_global) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id, criado_em params=('[{"espessura_mm": 15.0, "produto": "MDF BP Matt Marsala 02 Faces 2.750 x 1.850 x 15mm Guararapes", "quantidade": 2, "valor_unit": 530.44, "subtotal": 1166.97}, {"espessura_mm": 6.0, "produto": "MDF BP Misto Matt Marsala/Branco 2.750 x 1.850 x 06mm Guararapes", "quantidade": 1, "valor_unit": 386.33, "subtotal": 424.963}]', '[{"produto": "Fita de Borda PVC Essencial Wood Rovere Marsala Duratex 22x0,45mm Rolo 20m", "metros_total": 54.28, "valor_m": 2.2365, "subtotal": 121.397}]', '{"ferragem":...
+2026-06-06 18:42:37,891 | INFO | operation=query_one ok=True elapsed_ms=118.22 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(8,)
+2026-06-06 18:42:37,895 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:42:47,411 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:42:47,530 | INFO | operation=query_one ok=True elapsed_ms=118.77 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 18:42:47,533 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:43:18,579 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:43:18,698 | INFO | operation=query ok=True elapsed_ms=118.56 rows=2 sql=SELECT id, nome, documento, cidade, estado, telefone, COUNT(*) OVER() AS total_count FROM clientes ORDER BY nome LIMIT %s OFFSET %s params=[50, 0]
+2026-06-06 18:43:18,704 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:43:24,237 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:43:24,356 | INFO | operation=query ok=True elapsed_ms=118.13 rows=2 sql=SELECT id, total_geral, total_chapas, total_fitas, total_outros, aproveitamento_pct, desconto_global, cliente_id, nome_projeto, criado_em, COUNT(*) OVER() AS total_count FROM cotacoes WHERE cliente_id = %s ORDER BY criado_em DESC LIMIT %s OFFSET %s params=[6, 100, 0]
+2026-06-06 18:43:24,367 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:43:24,392 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:43:24,510 | INFO | operation=query_one ok=True elapsed_ms=117.88 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 18:43:24,512 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:43:24,983 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:43:25,109 | INFO | operation=query_one ok=True elapsed_ms=119.07 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(7,)
+2026-06-06 18:43:25,111 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:43:25,478 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:43:25,601 | INFO | operation=query_one ok=True elapsed_ms=122.73 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 18:43:25,604 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:43:28,280 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:43:28,398 | INFO | operation=query_one ok=True elapsed_ms=117.99 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(8,)
+2026-06-06 18:43:28,399 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:43:28,840 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:43:28,961 | INFO | operation=query_one ok=True elapsed_ms=120.06 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 18:43:28,964 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:43:33,494 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:43:33,614 | INFO | operation=query_one ok=True elapsed_ms=119.43 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(7,)
+2026-06-06 18:43:33,616 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:43:33,983 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:43:34,103 | INFO | operation=query_one ok=True elapsed_ms=119.28 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 18:43:34,108 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:43:35,397 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:43:35,516 | INFO | operation=query_one ok=True elapsed_ms=117.95 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(8,)
+2026-06-06 18:43:35,519 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:43:35,888 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:43:36,007 | INFO | operation=query_one ok=True elapsed_ms=119.31 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 18:43:36,008 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:43:42,146 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:43:42,268 | INFO | operation=query_one ok=True elapsed_ms=121.00 rows=1 sql=SELECT id FROM cotacoes WHERE id = %s params=(8,)
+2026-06-06 18:43:42,387 | INFO | operation=execute ok=True elapsed_ms=118.38 rows=1 sql=UPDATE cotacoes SET desconto_global = %s WHERE id = %s params=(12.0, 8)
+2026-06-06 18:43:42,505 | INFO | operation=query_one ok=True elapsed_ms=118.35 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(8,)
+2026-06-06 18:43:42,510 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:43:42,923 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:43:43,043 | INFO | operation=query_one ok=True elapsed_ms=120.16 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(7,)
+2026-06-06 18:43:43,046 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:43:43,405 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:43:43,526 | INFO | operation=query_one ok=True elapsed_ms=120.93 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 18:43:43,530 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:43:43,917 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:43:44,036 | INFO | operation=query_one ok=True elapsed_ms=118.72 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(7,)
+2026-06-06 18:43:44,039 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:43:44,534 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:43:44,653 | INFO | operation=query_one ok=True elapsed_ms=118.16 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 18:43:44,655 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:43:46,147 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:43:46,267 | INFO | operation=query_one ok=True elapsed_ms=119.97 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(8,)
+2026-06-06 18:43:46,270 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:43:46,628 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:43:46,747 | INFO | operation=query_one ok=True elapsed_ms=118.04 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 18:43:46,749 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:44:16,983 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:44:17,102 | INFO | operation=query_one ok=True elapsed_ms=118.64 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(7,)
+2026-06-06 18:44:17,105 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:44:17,501 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:44:17,620 | INFO | operation=query_one ok=True elapsed_ms=118.13 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 18:44:17,622 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:44:21,171 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:44:21,289 | INFO | operation=query_one ok=True elapsed_ms=118.00 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(8,)
+2026-06-06 18:44:21,290 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:44:21,698 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:44:21,817 | INFO | operation=query_one ok=True elapsed_ms=118.81 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 18:44:21,822 | INFO | operation=pool_putconn ok=True elapsed_ms=0.13 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:54:46,932 | INFO | operation=pool_getconn ok=True elapsed_ms=0.21 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:54:46,960 | INFO | operation=query_one ok=False elapsed_ms=24.78 rows=- sql=SELECT version() AS v params=()
+2026-06-06 18:54:47,014 | INFO | operation=pool_putconn ok=True elapsed_ms=0.14 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:55:12,557 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:55:12,568 | INFO | operation=query ok=False elapsed_ms=6.68 rows=- sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT f.id, f.nome, m.nome AS marca, f.tamanho_rolo_m, f.valor, f.valor_m_linear, fo.nome AS fornecedor, f.criado_em, f.atualizado_em FROM fitas_borda f LEFT JOIN marcas m ON m.id = f.marca_id LEFT JOIN fornecedores fo ON fo.id = f.fornecedor_id WHERE f.nome ILIKE %s AND f.tamanho_rolo_m >= %s AND f.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%branco%', 1.0, 0.01, 100, 0]
+2026-06-06 18:55:12,572 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:55:23,448 | INFO | operation=pool_getconn ok=True elapsed_ms=912.82 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:55:23,590 | INFO | operation=query ok=True elapsed_ms=139.13 rows=6 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT f.id, f.nome, m.nome AS marca, f.tamanho_rolo_m, f.valor, f.valor_m_linear, fo.nome AS fornecedor, f.criado_em, f.atualizado_em FROM fitas_borda f LEFT JOIN marcas m ON m.id = f.marca_id LEFT JOIN fornecedores fo ON fo.id = f.fornecedor_id WHERE f.nome ILIKE %s AND f.tamanho_rolo_m >= %s AND f.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%branca%', 1.0, 0.01, 100, 0]
+2026-06-06 18:55:23,604 | INFO | operation=pool_putconn ok=True elapsed_ms=0.04 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:55:32,829 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:55:32,960 | INFO | operation=query ok=True elapsed_ms=131.18 rows=39 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT f.id, f.nome, m.nome AS marca, f.tamanho_rolo_m, f.valor, f.valor_m_linear, fo.nome AS fornecedor, f.criado_em, f.atualizado_em FROM fitas_borda f LEFT JOIN marcas m ON m.id = f.marca_id LEFT JOIN fornecedores fo ON fo.id = f.fornecedor_id WHERE f.nome ILIKE %s AND f.tamanho_rolo_m >= %s AND f.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%TX%', 1.0, 0.01, 100, 0]
+2026-06-06 18:55:32,962 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:55:43,828 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:55:43,959 | INFO | operation=query ok=True elapsed_ms=130.45 rows=20 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.nome ILIKE %s AND c.espessura_mm >= %s AND c.espessura_mm <= %s AND c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%tx%', 14.6, 15.6, 0.01, 30, 0]
+2026-06-06 18:55:43,965 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:55:58,750 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:55:58,878 | INFO | operation=query ok=True elapsed_ms=127.23 rows=10 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.nome ILIKE %s AND c.espessura_mm >= %s AND c.espessura_mm <= %s AND c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%BRANCO TX%', 14.6, 15.6, 0.01, 30, 0]
+2026-06-06 18:55:58,881 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:58:15,235 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:58:15,355 | INFO | operation=query_one ok=True elapsed_ms=119.79 rows=1 sql=SELECT version() AS v params=()
+2026-06-06 18:58:15,357 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:58:55,830 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:58:55,958 | INFO | operation=query ok=True elapsed_ms=127.72 rows=10 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.nome ILIKE %s AND c.espessura_mm >= %s AND c.espessura_mm <= %s AND c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%BRANCO TX%', 14.5, 15.5, 0.01, 30, 0]
+2026-06-06 18:58:55,961 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:59:11,160 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:59:11,287 | INFO | operation=query ok=True elapsed_ms=126.73 rows=6 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.nome ILIKE %s AND c.espessura_mm >= %s AND c.espessura_mm <= %s AND c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%BRANCO TX%', 5.5, 6.5, 0.01, 30, 0]
+2026-06-06 18:59:11,290 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:59:26,447 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:59:26,575 | INFO | operation=query ok=True elapsed_ms=127.23 rows=8 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT f.id, f.nome, m.nome AS marca, f.tamanho_rolo_m, f.valor, f.valor_m_linear, fo.nome AS fornecedor, f.criado_em, f.atualizado_em FROM fitas_borda f LEFT JOIN marcas m ON m.id = f.marca_id LEFT JOIN fornecedores fo ON fo.id = f.fornecedor_id WHERE f.nome ILIKE %s AND f.tamanho_rolo_m >= %s AND f.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%BRANCO TX%', 1.0, 0.01, 100, 0]
+2026-06-06 18:59:26,579 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-06 18:59:49,333 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 18:59:49,453 | INFO | operation=query ok=True elapsed_ms=118.81 rows=2 sql=SELECT id, nome, documento, cidade, estado, telefone, COUNT(*) OVER() AS total_count FROM clientes ORDER BY nome LIMIT %s OFFSET %s params=[50, 0]
+2026-06-06 18:59:49,459 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:00:03,614 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:00:03,734 | INFO | operation=execute ok=True elapsed_ms=119.70 rows=1 sql=INSERT INTO cotacoes (chapas_json, fitas_json, outros_json, desperdicio_pct, aproveitamento_pct, total_chapas, total_fitas, total_outros, total_geral, observacoes, cliente_id, nome_projeto, previsao_entrega, desconto_global) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id, criado_em params=('[{"espessura_mm": 15.0, "produto": "MDF BP Branco TX 02 Faces 2.750 x 1.840 x 15mm Arauco", "quantidade": 2, "valor_unit": 261.11, "subtotal": 574.442}, {"espessura_mm": 6.0, "produto": "MDF BP Branco TX 01 Face 2.750 x 1.850 x 06mm Duratex", "quantidade": 1, "valor_unit": 221.11, "subtotal": 243.221}]', '[{"produto": "Fita de Borda PVC Branco TX 22x0,45mm Rolo 50m", "metros_total": 54.28, "valor_m": 1.0516, "subtotal": 57.0808}]', '{"ferragem": 120.0, "cola": 0.0, "mao_obra": 1000.0, "fret...
+2026-06-06 19:00:03,855 | INFO | operation=query_one ok=True elapsed_ms=119.16 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(9,)
+2026-06-06 19:00:03,856 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:00:12,516 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:00:12,636 | INFO | operation=query_one ok=True elapsed_ms=118.97 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:00:12,638 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:00:24,778 | INFO | operation=pool_getconn ok=True elapsed_ms=0.03 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:00:24,897 | INFO | operation=query ok=True elapsed_ms=118.76 rows=2 sql=SELECT id, nome, documento, cidade, estado, telefone, COUNT(*) OVER() AS total_count FROM clientes ORDER BY nome LIMIT %s OFFSET %s params=[50, 0]
+2026-06-06 19:00:24,899 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:00:27,841 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:00:27,961 | INFO | operation=query ok=True elapsed_ms=118.63 rows=3 sql=SELECT id, total_geral, total_chapas, total_fitas, total_outros, aproveitamento_pct, desconto_global, cliente_id, nome_projeto, criado_em, COUNT(*) OVER() AS total_count FROM cotacoes WHERE cliente_id = %s ORDER BY criado_em DESC LIMIT %s OFFSET %s params=[6, 100, 0]
+2026-06-06 19:00:27,965 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:00:27,986 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:00:28,111 | INFO | operation=query_one ok=True elapsed_ms=123.97 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:00:28,113 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:00:28,776 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:00:28,894 | INFO | operation=query_one ok=True elapsed_ms=118.02 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(7,)
+2026-06-06 19:00:28,898 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:00:29,408 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:00:29,527 | INFO | operation=query_one ok=True elapsed_ms=118.11 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:00:29,531 | INFO | operation=pool_putconn ok=True elapsed_ms=0.03 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:00:37,930 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:00:38,049 | INFO | operation=query_one ok=True elapsed_ms=118.34 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(9,)
+2026-06-06 19:00:38,052 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:00:38,546 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:00:38,665 | INFO | operation=query_one ok=True elapsed_ms=118.23 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:00:38,666 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:00:57,298 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:00:57,420 | INFO | operation=query_one ok=True elapsed_ms=120.91 rows=1 sql=SELECT id FROM cotacoes WHERE id = %s params=(9,)
+2026-06-06 19:00:57,539 | INFO | operation=execute ok=True elapsed_ms=118.50 rows=1 sql=UPDATE cotacoes SET desconto_global = %s WHERE id = %s params=(99.0, 9)
+2026-06-06 19:00:57,658 | INFO | operation=query_one ok=True elapsed_ms=119.00 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(9,)
+2026-06-06 19:00:57,663 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:00:58,067 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:00:58,186 | INFO | operation=query_one ok=True elapsed_ms=118.00 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(7,)
+2026-06-06 19:00:58,190 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:00:58,564 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:00:58,682 | INFO | operation=query_one ok=True elapsed_ms=117.63 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:00:58,683 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:00:59,082 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:00:59,201 | INFO | operation=query_one ok=True elapsed_ms=118.52 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(7,)
+2026-06-06 19:00:59,204 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:00:59,616 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:00:59,735 | INFO | operation=query_one ok=True elapsed_ms=118.14 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:00:59,738 | INFO | operation=pool_putconn ok=True elapsed_ms=0.06 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:01:01,189 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:01:01,312 | INFO | operation=query_one ok=True elapsed_ms=122.11 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(9,)
+2026-06-06 19:01:01,314 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:01:01,660 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:01:01,780 | INFO | operation=query_one ok=True elapsed_ms=119.25 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:01:01,783 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:01:05,728 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:01:05,849 | INFO | operation=query_one ok=True elapsed_ms=120.57 rows=1 sql=SELECT id FROM cotacoes WHERE id = %s params=(9,)
+2026-06-06 19:01:05,969 | INFO | operation=execute ok=True elapsed_ms=119.34 rows=1 sql=UPDATE cotacoes SET desconto_global = %s WHERE id = %s params=(10.0, 9)
+2026-06-06 19:01:06,089 | INFO | operation=query_one ok=True elapsed_ms=120.21 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(9,)
+2026-06-06 19:01:06,093 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:01:06,527 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:01:06,648 | INFO | operation=query_one ok=True elapsed_ms=119.60 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(7,)
+2026-06-06 19:01:06,650 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:01:07,007 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:01:07,126 | INFO | operation=query_one ok=True elapsed_ms=118.74 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:01:07,128 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:01:07,513 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:01:07,633 | INFO | operation=query_one ok=True elapsed_ms=119.32 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(7,)
+2026-06-06 19:01:07,634 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:01:08,058 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:01:08,176 | INFO | operation=query_one ok=True elapsed_ms=118.31 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:01:08,178 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:01:08,614 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:01:08,733 | INFO | operation=query_one ok=True elapsed_ms=118.50 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(9,)
+2026-06-06 19:01:08,734 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:01:09,091 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:01:09,209 | INFO | operation=query_one ok=True elapsed_ms=117.93 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:01:09,211 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:02:40,798 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:02:40,917 | INFO | operation=query_one ok=True elapsed_ms=119.11 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(8,)
+2026-06-06 19:02:40,922 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:02:41,344 | INFO | operation=pool_getconn ok=True elapsed_ms=0.03 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:02:41,464 | INFO | operation=query_one ok=True elapsed_ms=119.06 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:02:41,466 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:02:44,180 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:02:44,300 | INFO | operation=query_one ok=True elapsed_ms=119.06 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(7,)
+2026-06-06 19:02:44,302 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:02:44,657 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:02:44,778 | INFO | operation=query_one ok=True elapsed_ms=120.21 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:02:44,780 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:02:46,174 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:02:46,295 | INFO | operation=query_one ok=True elapsed_ms=119.91 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(9,)
+2026-06-06 19:02:46,296 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:02:46,695 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:02:46,814 | INFO | operation=query_one ok=True elapsed_ms=118.27 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:02:46,816 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:02:57,507 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:02:57,626 | INFO | operation=query_one ok=True elapsed_ms=118.27 rows=1 sql=SELECT version() AS v params=()
+2026-06-06 19:02:57,628 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:03:14,593 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:03:14,720 | INFO | operation=query ok=True elapsed_ms=126.03 rows=3 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.nome ILIKE %s AND c.espessura_mm >= %s AND c.espessura_mm <= %s AND c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%MARSALA%', 14.5, 15.5, 0.01, 30, 0]
+2026-06-06 19:03:14,721 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:05:21,158 | INFO | operation=pool_getconn ok=True elapsed_ms=0.08 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:05:21,288 | INFO | operation=query ok=True elapsed_ms=128.10 rows=3 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.nome ILIKE %s AND c.espessura_mm >= %s AND c.espessura_mm <= %s AND c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%MARSALA%', 5.5, 6.5, 0.01, 30, 0]
+2026-06-06 19:05:21,292 | INFO | operation=pool_putconn ok=True elapsed_ms=0.07 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:05:35,998 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:05:36,131 | INFO | operation=query ok=True elapsed_ms=132.70 rows=15 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT f.id, f.nome, m.nome AS marca, f.tamanho_rolo_m, f.valor, f.valor_m_linear, fo.nome AS fornecedor, f.criado_em, f.atualizado_em FROM fitas_borda f LEFT JOIN marcas m ON m.id = f.marca_id LEFT JOIN fornecedores fo ON fo.id = f.fornecedor_id WHERE f.nome ILIKE %s AND f.tamanho_rolo_m >= %s AND f.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%MARSALA%', 1.0, 0.01, 100, 0]
+2026-06-06 19:05:36,135 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:05:58,576 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:05:58,695 | INFO | operation=query ok=True elapsed_ms=118.25 rows=2 sql=SELECT id, nome, documento, cidade, estado, telefone, COUNT(*) OVER() AS total_count FROM clientes ORDER BY nome LIMIT %s OFFSET %s params=[50, 0]
+2026-06-06 19:05:58,697 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:06:08,314 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:06:08,434 | INFO | operation=execute ok=True elapsed_ms=119.42 rows=1 sql=INSERT INTO cotacoes (chapas_json, fitas_json, outros_json, desperdicio_pct, aproveitamento_pct, total_chapas, total_fitas, total_outros, total_geral, observacoes, cliente_id, nome_projeto, previsao_entrega, desconto_global) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id, criado_em params=('[{"espessura_mm": 15.0, "produto": "MDF Marsala Matt 15mm 2750x1850mm 2 Faces Guararapes", "quantidade": 2, "valor_unit": 512.9, "subtotal": 1228.91}, {"espessura_mm": 6.0, "produto": "MDF Marsala Matt 6mm 2750x1850mm 2 Faces com 1 face Branco Guararapes", "quantidade": 1, "valor_unit": 373.9, "subtotal": 447.932}]', '[{"produto": "Fita de Borda Marsala Matt 22mm 0,45mm 20m Rehau", "metros_total": 54.28, "valor_m": 2.145, "subtotal": 116.431}]', '{"ferragem": 120.0, "cola": 0.0, "mao_obra":...
+2026-06-06 19:06:08,552 | INFO | operation=query_one ok=True elapsed_ms=117.72 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(10,)
+2026-06-06 19:06:08,554 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:06:14,476 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:06:14,596 | INFO | operation=query_one ok=True elapsed_ms=119.00 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:06:14,599 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:06:46,668 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:06:46,789 | INFO | operation=execute ok=True elapsed_ms=120.78 rows=1 sql=INSERT INTO cotacoes (chapas_json, fitas_json, outros_json, desperdicio_pct, aproveitamento_pct, total_chapas, total_fitas, total_outros, total_geral, observacoes, cliente_id, nome_projeto, previsao_entrega, desconto_global) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id, criado_em params=('[{"espessura_mm": 15.0, "produto": "MDF Marsala Matt 15mm 2750x1850mm 2 Faces Guararapes", "quantidade": 2, "valor_unit": 512.9, "subtotal": 1107.86}, {"espessura_mm": 6.0, "produto": "MDF Marsala Matt 6mm 2750x1850mm 2 Faces com 1 face Branco Guararapes", "quantidade": 1, "valor_unit": 373.9, "subtotal": 403.812}]', '[{"produto": "Fita de Borda Marsala Matt 22mm 0,45mm 20m Rehau", "metros_total": 54.28, "valor_m": 2.145, "subtotal": 116.431}]', '{"ferragem": 120.0, "cola": 0.0, "mao_obra":...
+2026-06-06 19:06:46,908 | INFO | operation=query_one ok=True elapsed_ms=118.14 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(11,)
+2026-06-06 19:06:46,909 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:06:51,904 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:06:54,793 | INFO | operation=query_one ok=True elapsed_ms=2888.25 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:06:54,795 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:08:14,950 | INFO | operation=pool_getconn ok=True elapsed_ms=0.09 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:08:15,072 | INFO | operation=query ok=True elapsed_ms=119.85 rows=11 sql=SELECT id, total_geral, total_chapas, total_fitas, total_outros, aproveitamento_pct, desconto_global, cliente_id, nome_projeto, criado_em, COUNT(*) OVER() AS total_count FROM cotacoes ORDER BY criado_em DESC LIMIT %s OFFSET %s params=[100, 0]
+2026-06-06 19:08:15,084 | INFO | operation=pool_putconn ok=True elapsed_ms=0.04 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:08:15,111 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:08:15,230 | INFO | operation=query_one ok=True elapsed_ms=118.52 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 19:08:15,233 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:08:15,250 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:08:15,370 | INFO | operation=query_one ok=True elapsed_ms=120.06 rows=0 sql=SELECT * FROM clientes WHERE id = %s params=(4,)
+2026-06-06 19:08:15,376 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:08:15,434 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:08:15,553 | INFO | operation=query_one ok=True elapsed_ms=118.09 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:08:15,555 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:08:16,037 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:08:16,158 | INFO | operation=query_one ok=True elapsed_ms=119.92 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(1,)
+2026-06-06 19:08:16,162 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:08:16,597 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:08:16,718 | INFO | operation=query_one ok=True elapsed_ms=119.40 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 19:08:16,719 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:08:18,845 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:08:18,964 | INFO | operation=query_one ok=True elapsed_ms=118.39 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(11,)
+2026-06-06 19:08:18,967 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:08:19,368 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:08:19,488 | INFO | operation=query_one ok=True elapsed_ms=119.25 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:08:19,489 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:08:24,556 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:08:24,677 | INFO | operation=query_one ok=True elapsed_ms=120.15 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(10,)
+2026-06-06 19:08:24,678 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:08:25,046 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:08:25,165 | INFO | operation=query_one ok=True elapsed_ms=117.97 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:08:25,167 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:08:26,885 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:08:27,003 | INFO | operation=query_one ok=True elapsed_ms=117.90 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(11,)
+2026-06-06 19:08:27,006 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:08:27,396 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:08:27,514 | INFO | operation=query_one ok=True elapsed_ms=117.99 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:08:27,516 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:09:43,303 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:09:43,424 | INFO | operation=query_one ok=True elapsed_ms=118.86 rows=1 sql=SELECT id FROM cotacoes WHERE id = %s params=(11,)
+2026-06-06 19:09:43,544 | INFO | operation=execute ok=True elapsed_ms=119.92 rows=1 sql=UPDATE cotacoes SET desconto_global = %s WHERE id = %s params=(5.0, 11)
+2026-06-06 19:09:43,663 | INFO | operation=query_one ok=True elapsed_ms=118.46 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(11,)
+2026-06-06 19:09:43,664 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:09:44,130 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:09:44,250 | INFO | operation=query_one ok=True elapsed_ms=120.12 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(1,)
+2026-06-06 19:09:44,252 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:09:44,664 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:09:44,784 | INFO | operation=query_one ok=True elapsed_ms=118.30 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 19:09:44,787 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:09:45,206 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:09:45,324 | INFO | operation=query_one ok=True elapsed_ms=118.25 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(1,)
+2026-06-06 19:09:45,326 | INFO | operation=pool_putconn ok=True elapsed_ms=0.03 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:09:45,733 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:09:45,851 | INFO | operation=query_one ok=True elapsed_ms=117.82 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 19:09:45,853 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:09:47,447 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:09:47,566 | INFO | operation=query_one ok=True elapsed_ms=118.28 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(11,)
+2026-06-06 19:09:47,567 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:09:47,990 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:09:48,111 | INFO | operation=query_one ok=True elapsed_ms=120.73 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:09:48,114 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:10:04,430 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:10:04,550 | INFO | operation=query_one ok=True elapsed_ms=118.64 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(11,)
+2026-06-06 19:10:04,551 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:10:05,099 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:10:05,221 | INFO | operation=query_one ok=True elapsed_ms=120.93 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:10:05,225 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:10:57,576 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:10:57,815 | INFO | operation=query_one ok=True elapsed_ms=238.68 rows=1 sql=SELECT version() AS v params=()
+2026-06-06 19:10:57,818 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:11:26,608 | INFO | operation=pool_getconn ok=True elapsed_ms=0.02 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:11:26,752 | INFO | operation=query ok=True elapsed_ms=136.03 rows=3 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.nome ILIKE %s AND c.espessura_mm >= %s AND c.espessura_mm <= %s AND c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%marsala%', 14.5, 15.5, 0.01, 30, 0]
+2026-06-06 19:11:26,760 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:11:43,422 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:11:43,549 | INFO | operation=query ok=True elapsed_ms=126.28 rows=3 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.nome ILIKE %s AND c.espessura_mm >= %s AND c.espessura_mm <= %s AND c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%marsala%', 5.5, 6.5, 0.01, 30, 0]
+2026-06-06 19:11:43,554 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:12:02,002 | INFO | operation=pool_getconn ok=True elapsed_ms=0.02 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:12:02,131 | INFO | operation=query ok=True elapsed_ms=128.73 rows=15 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT f.id, f.nome, m.nome AS marca, f.tamanho_rolo_m, f.valor, f.valor_m_linear, fo.nome AS fornecedor, f.criado_em, f.atualizado_em FROM fitas_borda f LEFT JOIN marcas m ON m.id = f.marca_id LEFT JOIN fornecedores fo ON fo.id = f.fornecedor_id WHERE f.nome ILIKE %s AND f.tamanho_rolo_m >= %s AND f.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%marsala%', 1.0, 0.01, 100, 0]
+2026-06-06 19:12:02,135 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:12:54,698 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:12:54,834 | INFO | operation=query ok=True elapsed_ms=135.61 rows=15 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT f.id, f.nome, m.nome AS marca, f.tamanho_rolo_m, f.valor, f.valor_m_linear, fo.nome AS fornecedor, f.criado_em, f.atualizado_em FROM fitas_borda f LEFT JOIN marcas m ON m.id = f.marca_id LEFT JOIN fornecedores fo ON fo.id = f.fornecedor_id WHERE f.nome ILIKE %s AND f.tamanho_rolo_m >= %s AND f.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%marsala%', 1.0, 0.01, 100, 0]
+2026-06-06 19:12:54,836 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:13:15,422 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:13:15,553 | INFO | operation=query ok=True elapsed_ms=130.29 rows=3 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT f.id, f.nome, m.nome AS marca, f.tamanho_rolo_m, f.valor, f.valor_m_linear, fo.nome AS fornecedor, f.criado_em, f.atualizado_em FROM fitas_borda f LEFT JOIN marcas m ON m.id = f.marca_id LEFT JOIN fornecedores fo ON fo.id = f.fornecedor_id WHERE f.nome ILIKE %s AND f.tamanho_rolo_m >= %s AND f.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%marsala matt%', 1.0, 0.01, 100, 0]
+2026-06-06 19:13:15,557 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:13:42,274 | INFO | operation=pool_getconn ok=True elapsed_ms=0.02 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:13:42,393 | INFO | operation=query ok=True elapsed_ms=118.49 rows=2 sql=SELECT id, nome, documento, cidade, estado, telefone, COUNT(*) OVER() AS total_count FROM clientes ORDER BY nome LIMIT %s OFFSET %s params=[50, 0]
+2026-06-06 19:13:42,399 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:14:04,437 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:14:04,561 | INFO | operation=execute ok=True elapsed_ms=120.50 rows=1 sql=INSERT INTO cotacoes (chapas_json, fitas_json, outros_json, desperdicio_pct, aproveitamento_pct, total_chapas, total_fitas, total_outros, total_geral, observacoes, cliente_id, nome_projeto, previsao_entrega, desconto_global) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id, criado_em params=('[{"espessura_mm": 15.0, "produto": "MDF BP Matt Marsala 02 Faces 2.750 x 1.850 x 15mm Guararapes", "quantidade": 2, "valor_unit": 530.44, "subtotal": 1145.75}, {"espessura_mm": 6.0, "produto": "MDF BP Misto Matt Marsala/Branco 2.750 x 1.850 x 06mm Guararapes", "quantidade": 1, "valor_unit": 386.33, "subtotal": 417.236}]', '[{"produto": "Fita de Borda Marsala Matt 22mm 0,45mm 20m Rehau", "metros_total": 54.1788, "valor_m": 2.145, "subtotal": 116.214}]', '{"ferragem": 150.0, "cola": 0.0, "mao...
+2026-06-06 19:14:04,683 | INFO | operation=query_one ok=True elapsed_ms=121.51 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(12,)
+2026-06-06 19:14:04,684 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:14:10,221 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:14:10,340 | INFO | operation=query_one ok=True elapsed_ms=118.21 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:14:10,344 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:14:22,187 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:14:22,306 | INFO | operation=query ok=True elapsed_ms=118.20 rows=2 sql=SELECT id, nome, documento, cidade, estado, telefone, COUNT(*) OVER() AS total_count FROM clientes ORDER BY nome LIMIT %s OFFSET %s params=[50, 0]
+2026-06-06 19:14:22,309 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:14:23,704 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:14:23,824 | INFO | operation=query ok=True elapsed_ms=119.67 rows=6 sql=SELECT id, total_geral, total_chapas, total_fitas, total_outros, aproveitamento_pct, desconto_global, cliente_id, nome_projeto, criado_em, COUNT(*) OVER() AS total_count FROM cotacoes WHERE cliente_id = %s ORDER BY criado_em DESC LIMIT %s OFFSET %s params=[6, 100, 0]
+2026-06-06 19:14:23,826 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:14:23,855 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:14:23,974 | INFO | operation=query_one ok=True elapsed_ms=118.08 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:14:23,975 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:14:24,385 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:14:24,503 | INFO | operation=query_one ok=True elapsed_ms=118.45 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(9,)
+2026-06-06 19:14:24,507 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:14:24,879 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:14:25,000 | INFO | operation=query_one ok=True elapsed_ms=120.57 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:14:25,002 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:14:26,276 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:14:26,398 | INFO | operation=query_one ok=True elapsed_ms=120.99 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(11,)
+2026-06-06 19:14:26,399 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:14:26,792 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:14:26,910 | INFO | operation=query_one ok=True elapsed_ms=117.90 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:14:26,912 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:14:27,443 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:14:27,563 | INFO | operation=query_one ok=True elapsed_ms=119.72 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(12,)
+2026-06-06 19:14:27,566 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:14:27,968 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:14:28,086 | INFO | operation=query_one ok=True elapsed_ms=117.51 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:14:28,088 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:14:31,355 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:14:31,474 | INFO | operation=query_one ok=True elapsed_ms=118.87 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(12,)
+2026-06-06 19:14:31,479 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:14:31,866 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:14:31,984 | INFO | operation=query_one ok=True elapsed_ms=117.89 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:14:31,986 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:14:32,828 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:14:32,948 | INFO | operation=query_one ok=True elapsed_ms=119.47 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(11,)
+2026-06-06 19:14:32,951 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:14:33,340 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:14:33,459 | INFO | operation=query_one ok=True elapsed_ms=118.74 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-06 19:14:33,461 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:21:17,067 | INFO | operation=pool_getconn ok=True elapsed_ms=2.21 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:21:17,124 | INFO | operation=query_one ok=False elapsed_ms=43.38 rows=- sql=SELECT version() AS v params=()
+2026-06-06 19:21:17,176 | INFO | operation=pool_putconn ok=True elapsed_ms=0.34 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:23:11,841 | INFO | operation=pool_getconn ok=True elapsed_ms=0.37 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:23:11,974 | INFO | operation=query ok=True elapsed_ms=130.39 rows=30 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.espessura_mm >= %s AND c.espessura_mm <= %s AND c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=[14.5, 15.5, 0.01, 30, 0]
+2026-06-06 19:23:11,984 | INFO | operation=pool_putconn ok=True elapsed_ms=0.03 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:23:20,796 | INFO | operation=pool_getconn ok=True elapsed_ms=0.05 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:23:20,924 | INFO | operation=query ok=True elapsed_ms=125.21 rows=30 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE cat.nome ILIKE %s AND c.espessura_mm >= %s AND c.espessura_mm <= %s AND c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%MDF%', 14.5, 15.5, 0.01, 30, 0]
+2026-06-06 19:23:20,927 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:23:33,020 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:23:33,150 | INFO | operation=query ok=True elapsed_ms=129.63 rows=8 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.nome ILIKE %s AND cat.nome ILIKE %s AND c.espessura_mm >= %s AND c.espessura_mm <= %s AND c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%branco tx%', '%MDF%', 14.5, 15.5, 0.01, 30, 0]
+2026-06-06 19:23:33,153 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:23:59,823 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:23:59,952 | INFO | operation=query ok=True elapsed_ms=128.60 rows=21 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.nome ILIKE %s AND c.espessura_mm >= %s AND c.espessura_mm <= %s AND c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%preto%', 5.5, 6.5, 0.01, 30, 0]
+2026-06-06 19:23:59,955 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:24:06,029 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:24:06,157 | INFO | operation=query ok=True elapsed_ms=126.65 rows=4 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.nome ILIKE %s AND c.espessura_mm >= %s AND c.espessura_mm <= %s AND c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%preto tx%', 5.5, 6.5, 0.01, 30, 0]
+2026-06-06 19:24:06,160 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:24:20,053 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:24:20,181 | INFO | operation=query ok=True elapsed_ms=126.55 rows=8 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT f.id, f.nome, m.nome AS marca, f.tamanho_rolo_m, f.valor, f.valor_m_linear, fo.nome AS fornecedor, f.criado_em, f.atualizado_em FROM fitas_borda f LEFT JOIN marcas m ON m.id = f.marca_id LEFT JOIN fornecedores fo ON fo.id = f.fornecedor_id WHERE f.nome ILIKE %s AND f.tamanho_rolo_m >= %s AND f.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%branco tx%', 1.0, 0.01, 100, 0]
+2026-06-06 19:24:20,184 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:24:58,479 | INFO | operation=pool_getconn ok=True elapsed_ms=0.04 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:24:58,602 | INFO | operation=execute ok=True elapsed_ms=120.20 rows=-1 sql=CREATE TABLE IF NOT EXISTS clientes ( id SERIAL PRIMARY KEY, nome VARCHAR(200) NOT NULL, documento VARCHAR(20), telefone VARCHAR(20), email VARCHAR(150), endereco TEXT, cidade VARCHAR(100), estado CHAR(2), observacoes TEXT, criado_em TIMESTAMP DEFAULT NOW(), atualizado_em TIMESTAMP DEFAULT NOW() ); params=()
+2026-06-06 19:24:58,720 | INFO | operation=query ok=True elapsed_ms=117.96 rows=2 sql=SELECT id, nome, documento, cidade, estado, telefone, COUNT(*) OVER() AS total_count FROM clientes ORDER BY nome LIMIT %s OFFSET %s params=[50, 0]
+2026-06-06 19:24:58,728 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:25:13,256 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:25:13,380 | INFO | operation=execute ok=True elapsed_ms=120.72 rows=-1 sql=CREATE TABLE IF NOT EXISTS cotacoes ( id SERIAL PRIMARY KEY, chapas_json TEXT NOT NULL, fitas_json TEXT NOT NULL, outros_json TEXT NOT NULL, desperdicio_pct NUMERIC(6,2) DEFAULT 0, aproveitamento_pct NUMERIC(6,2) DEFAULT 0, total_chapas NUMERIC(12,2) DEFAULT 0, total_fitas NUMERIC(12,2) DEFAULT 0, total_outros NUMERIC(12,2) DEFAULT 0, total_geral NUMERIC(12,2) DEFAULT 0, observacoes TEXT, cliente_id INTEGER, nome_projeto VARCHAR(200), previsao_entrega VARCHAR(20), desconto_global NUMERIC(6,2) DEFAULT 0, criado_em TIMESTAMP DEFAULT NOW() ); -- Adiciona colunas se a tabela ja existir (migracao segura) ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS cliente_id INTEGER; ALTER TABLE cotacoes ADD... params=()
+2026-06-06 19:25:13,503 | INFO | operation=execute ok=True elapsed_ms=122.47 rows=1 sql=INSERT INTO cotacoes (chapas_json, fitas_json, outros_json, desperdicio_pct, aproveitamento_pct, total_chapas, total_fitas, total_outros, total_geral, observacoes, cliente_id, nome_projeto, previsao_entrega, desconto_global) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id, criado_em params=('[{"espessura_mm": 15.0, "produto": "MDF BP Branco TX 02 Faces 2.750 x 1.840 x 15mm Arauco", "quantidade": 2, "valor_unit": 261.11, "subtotal": 625.62}, {"espessura_mm": 6.0, "produto": "MDF BP Misto Preto TX/Branco 2.750 x 1.850 x 06mm Eucatex", "quantidade": 1, "valor_unit": 251.11, "subtotal": 300.83}]', '[{"produto": "Fita de Borda PVC Branco TX 33x2,00mm Rolo 20m", "metros_total": 47.8071, "valor_m": 4.7495, "subtotal": 227.06}]', '{"ferragem": 0.0, "cola": 0.0, "mao_obra": 0.0, "frete"...
+2026-06-06 19:25:13,623 | INFO | operation=query_one ok=True elapsed_ms=119.55 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(13,)
+2026-06-06 19:25:13,628 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:25:20,455 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:25:20,578 | INFO | operation=query_one ok=True elapsed_ms=119.14 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 19:25:20,581 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:25:43,165 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:25:43,285 | INFO | operation=query ok=True elapsed_ms=119.58 rows=2 sql=SELECT id, nome, documento, cidade, estado, telefone, COUNT(*) OVER() AS total_count FROM clientes ORDER BY nome LIMIT %s OFFSET %s params=[50, 0]
+2026-06-06 19:25:43,286 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:25:45,308 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:25:45,430 | INFO | operation=query ok=True elapsed_ms=121.04 rows=6 sql=SELECT id, total_geral, total_chapas, total_fitas, total_outros, aproveitamento_pct, desconto_global, cliente_id, nome_projeto, criado_em, COUNT(*) OVER() AS total_count FROM cotacoes WHERE cliente_id = %s ORDER BY criado_em DESC LIMIT %s OFFSET %s params=[1, 100, 0]
+2026-06-06 19:25:45,432 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:25:45,435 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:25:45,555 | INFO | operation=query_one ok=True elapsed_ms=118.57 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 19:25:45,556 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:25:46,115 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:25:46,235 | INFO | operation=query_one ok=True elapsed_ms=119.06 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(1,)
+2026-06-06 19:25:46,238 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:25:46,945 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:25:47,064 | INFO | operation=query_one ok=True elapsed_ms=118.56 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 19:25:47,066 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:25:48,951 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:25:49,070 | INFO | operation=query_one ok=True elapsed_ms=118.80 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(13,)
+2026-06-06 19:25:49,072 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:25:49,634 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:25:49,752 | INFO | operation=query_one ok=True elapsed_ms=117.78 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 19:25:49,754 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:25:56,376 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:25:56,494 | INFO | operation=query_one ok=True elapsed_ms=117.75 rows=1 sql=SELECT id FROM cotacoes WHERE id = %s params=(13,)
+2026-06-06 19:25:56,613 | INFO | operation=execute ok=True elapsed_ms=118.68 rows=1 sql=UPDATE cotacoes SET desconto_global = %s WHERE id = %s params=(10.0, 13)
+2026-06-06 19:25:56,732 | INFO | operation=query_one ok=True elapsed_ms=119.31 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(13,)
+2026-06-06 19:25:56,735 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:25:57,224 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:25:57,342 | INFO | operation=query_one ok=True elapsed_ms=117.75 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(1,)
+2026-06-06 19:25:57,343 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:25:57,838 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:25:57,957 | INFO | operation=query_one ok=True elapsed_ms=119.14 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 19:25:57,959 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:25:58,577 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:25:58,695 | INFO | operation=query_one ok=True elapsed_ms=117.94 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(1,)
+2026-06-06 19:25:58,697 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:25:59,230 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:25:59,350 | INFO | operation=query_one ok=True elapsed_ms=119.40 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 19:25:59,352 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:26:01,143 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:26:01,262 | INFO | operation=query_one ok=True elapsed_ms=118.24 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(13,)
+2026-06-06 19:26:01,264 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-06 19:26:01,767 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-06 19:26:01,885 | INFO | operation=query_one ok=True elapsed_ms=118.39 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-06 19:26:01,887 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:14:29,078 | INFO | operation=pool_getconn ok=True elapsed_ms=1.26 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:14:29,107 | INFO | operation=query_one ok=False elapsed_ms=22.59 rows=- sql=SELECT version() AS v params=()
+2026-06-07 01:14:29,134 | INFO | operation=pool_putconn ok=True elapsed_ms=0.04 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:15:17,762 | INFO | operation=pool_getconn ok=True elapsed_ms=0.03 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:15:17,772 | INFO | operation=query ok=False elapsed_ms=6.26 rows=- sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.nome ILIKE %s AND c.espessura_mm >= %s AND c.espessura_mm <= %s AND c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%CARVALHO%', 14.5, 15.5, 0.01, 30, 0]
+2026-06-07 01:15:17,780 | INFO | operation=pool_putconn ok=True elapsed_ms=0.66 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:15:21,870 | INFO | operation=pool_getconn ok=True elapsed_ms=894.60 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:15:22,008 | INFO | operation=query ok=True elapsed_ms=137.34 rows=30 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.nome ILIKE %s AND c.espessura_mm >= %s AND c.espessura_mm <= %s AND c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%CARVALHO%', 14.5, 15.5, 0.01, 30, 0]
+2026-06-07 01:15:22,014 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:15:37,580 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:15:37,715 | INFO | operation=query ok=True elapsed_ms=132.21 rows=2 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.nome ILIKE %s AND c.espessura_mm >= %s AND c.espessura_mm <= %s AND c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%CARVALHO H%', 14.5, 15.5, 0.01, 30, 0]
+2026-06-07 01:15:37,717 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:15:48,891 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:15:49,024 | INFO | operation=query ok=True elapsed_ms=132.08 rows=2 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT c.id, c.nome, cat.nome AS subcategoria, m.nome AS marca, c.largura_mm, c.comprimento_mm, c.espessura_mm, c.acabamento, c.valor, c.valor_m2, f.nome AS fornecedor, c.criado_em, c.atualizado_em FROM chapas c LEFT JOIN marcas m ON m.id = c.marca_id LEFT JOIN categorias cat ON cat.id = c.categoria_id LEFT JOIN fornecedores f ON f.id = c.fornecedor_id WHERE c.nome ILIKE %s AND c.espessura_mm >= %s AND c.espessura_mm <= %s AND c.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%CARVALHO H%', 5.5, 6.5, 0.01, 30, 0]
+2026-06-07 01:15:49,026 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:15:59,939 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:16:00,068 | INFO | operation=query ok=True elapsed_ms=128.03 rows=16 sql=SELECT q.*, COUNT(*) OVER() AS total_count FROM ( SELECT f.id, f.nome, m.nome AS marca, f.tamanho_rolo_m, f.valor, f.valor_m_linear, fo.nome AS fornecedor, f.criado_em, f.atualizado_em FROM fitas_borda f LEFT JOIN marcas m ON m.id = f.marca_id LEFT JOIN fornecedores fo ON fo.id = f.fornecedor_id WHERE f.nome ILIKE %s AND f.tamanho_rolo_m >= %s AND f.valor >= %s) q ORDER BY q.nome LIMIT %s OFFSET %s params=['%CARVALHO H%', 1.0, 0.01, 100, 0]
+2026-06-07 01:16:00,071 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:18:01,070 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:18:01,191 | INFO | operation=execute ok=True elapsed_ms=119.52 rows=1 sql=INSERT INTO clientes (nome, documento, telefone, email, endereco, cidade, estado, observacoes) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id, criado_em, atualizado_em params=('FABIO YOSHIZAKI', '413.434.948-69', '11939213367', 'GAB@GAB.COM', '', 'SAO PAULO', 'SP', '')
+2026-06-07 01:18:01,314 | INFO | operation=query_one ok=True elapsed_ms=122.75 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(7,)
+2026-06-07 01:18:01,316 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:18:11,653 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:18:11,777 | INFO | operation=execute ok=True elapsed_ms=120.39 rows=1 sql=INSERT INTO cotacoes (chapas_json, fitas_json, outros_json, desperdicio_pct, aproveitamento_pct, total_chapas, total_fitas, total_outros, total_geral, observacoes, cliente_id, nome_projeto, previsao_entrega, desconto_global) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id, criado_em params=('[{"espessura_mm": 15.0, "produto": "MDF BP Design Carvalho Hanover 02 Faces 2.750 x 1.840 x 15mm Duratex", "quantidade": 3, "valor_unit": 585.33, "subtotal": 2082.6}, {"espessura_mm": 6.0, "produto": "MDF Carvalho Hanover Design 6mm 2750x1840mm 2 Faces com 1 face Branco Duratex", "quantidade": 1, "valor_unit": 404.9, "subtotal": 480.211}]', '[{"produto": "Fita de Borda Carvalho Hanover /Brise Design 22mm 0,45mm 20m Tabone", "metros_total": 86.8524, "valor_m": 2.345, "subtotal": 203.669}]', ...
+2026-06-07 01:18:11,898 | INFO | operation=query_one ok=True elapsed_ms=119.20 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(14,)
+2026-06-07 01:18:11,900 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:18:25,919 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:18:26,039 | INFO | operation=query_one ok=True elapsed_ms=118.39 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(7,)
+2026-06-07 01:18:26,042 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:19:30,651 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:19:30,775 | INFO | operation=execute ok=True elapsed_ms=123.22 rows=1 sql=INSERT INTO cotacoes (chapas_json, fitas_json, outros_json, desperdicio_pct, aproveitamento_pct, total_chapas, total_fitas, total_outros, total_geral, observacoes, cliente_id, nome_projeto, previsao_entrega, desconto_global) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id, criado_em params=('[{"espessura_mm": 15.0, "produto": "MDF BP Design Carvalho Hanover 02 Faces 2.750 x 1.840 x 15mm Duratex", "quantidade": 3, "valor_unit": 585.33, "subtotal": 1931.59}, {"espessura_mm": 6.0, "produto": "MDF Carvalho Hanover Design 6mm 2750x1840mm 2 Faces com 1 face Branco Duratex", "quantidade": 1, "valor_unit": 404.9, "subtotal": 445.39}]', '[{"produto": "Fita de Borda Carvalho Hanover /Brise Design 22mm 0,45mm 20m Tabone", "metros_total": 86.8524, "valor_m": 2.345, "subtotal": 203.669}]', ...
+2026-06-07 01:19:30,894 | INFO | operation=query_one ok=True elapsed_ms=119.08 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(15,)
+2026-06-07 01:19:30,897 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:19:45,837 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:19:45,956 | INFO | operation=query_one ok=True elapsed_ms=118.47 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(7,)
+2026-06-07 01:19:45,958 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:22:32,598 | INFO | operation=pool_getconn ok=True elapsed_ms=0.46 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:22:32,723 | INFO | operation=query ok=True elapsed_ms=123.99 rows=3 sql=SELECT id, nome, documento, cidade, estado, telefone, COUNT(*) OVER() AS total_count FROM clientes ORDER BY nome LIMIT %s OFFSET %s params=[50, 0]
+2026-06-07 01:22:32,732 | INFO | operation=pool_putconn ok=True elapsed_ms=0.05 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:22:36,129 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:22:36,250 | INFO | operation=query ok=True elapsed_ms=119.90 rows=15 sql=SELECT id, total_geral, total_chapas, total_fitas, total_outros, aproveitamento_pct, desconto_global, cliente_id, nome_projeto, criado_em, COUNT(*) OVER() AS total_count FROM cotacoes ORDER BY criado_em DESC LIMIT %s OFFSET %s params=[100, 0]
+2026-06-07 01:22:36,255 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:22:36,257 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:22:36,376 | INFO | operation=query_one ok=True elapsed_ms=118.66 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-07 01:22:36,383 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:22:36,385 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:22:36,504 | INFO | operation=query_one ok=True elapsed_ms=118.60 rows=0 sql=SELECT * FROM clientes WHERE id = %s params=(4,)
+2026-06-07 01:22:36,508 | INFO | operation=pool_putconn ok=True elapsed_ms=0.03 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:22:36,558 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:22:36,677 | INFO | operation=query_one ok=True elapsed_ms=118.00 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-07 01:22:36,678 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:22:36,697 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:22:36,816 | INFO | operation=query_one ok=True elapsed_ms=118.36 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(7,)
+2026-06-07 01:22:36,819 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:22:37,211 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:22:37,330 | INFO | operation=query_one ok=True elapsed_ms=118.21 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(1,)
+2026-06-07 01:22:37,334 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:22:37,705 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:22:37,825 | INFO | operation=query_one ok=True elapsed_ms=119.57 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-07 01:22:37,826 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:22:40,690 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:22:40,810 | INFO | operation=query_one ok=True elapsed_ms=119.35 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(15,)
+2026-06-07 01:22:40,811 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:22:41,179 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:22:41,299 | INFO | operation=query_one ok=True elapsed_ms=119.26 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(7,)
+2026-06-07 01:22:41,301 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:22:54,494 | INFO | operation=pool_getconn ok=True elapsed_ms=0.02 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:22:54,614 | INFO | operation=query_one ok=True elapsed_ms=120.11 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(14,)
+2026-06-07 01:22:54,618 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:22:54,982 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:22:55,101 | INFO | operation=query_one ok=True elapsed_ms=119.13 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(7,)
+2026-06-07 01:22:55,103 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:23:01,581 | INFO | operation=pool_getconn ok=True elapsed_ms=0.02 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:23:01,701 | INFO | operation=query ok=True elapsed_ms=119.61 rows=15 sql=SELECT id, total_geral, total_chapas, total_fitas, total_outros, aproveitamento_pct, desconto_global, cliente_id, nome_projeto, criado_em, COUNT(*) OVER() AS total_count FROM cotacoes ORDER BY criado_em DESC LIMIT %s OFFSET %s params=[100, 0]
+2026-06-07 01:23:01,702 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:23:01,729 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:23:01,849 | INFO | operation=query_one ok=True elapsed_ms=119.16 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-07 01:23:01,850 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:23:01,869 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:23:01,989 | INFO | operation=query_one ok=True elapsed_ms=119.09 rows=0 sql=SELECT * FROM clientes WHERE id = %s params=(4,)
+2026-06-07 01:23:01,990 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:23:02,040 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:23:02,160 | INFO | operation=query_one ok=True elapsed_ms=119.31 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-07 01:23:02,162 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:23:02,177 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:23:02,295 | INFO | operation=query_one ok=True elapsed_ms=118.00 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(7,)
+2026-06-07 01:23:02,298 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:23:02,708 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:23:02,826 | INFO | operation=query_one ok=True elapsed_ms=118.07 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(1,)
+2026-06-07 01:23:02,830 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:23:03,220 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:23:03,341 | INFO | operation=query_one ok=True elapsed_ms=120.85 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-07 01:23:03,344 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:23:06,625 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:23:06,744 | INFO | operation=query_one ok=True elapsed_ms=117.97 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(15,)
+2026-06-07 01:23:06,746 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:23:07,132 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:23:07,252 | INFO | operation=query_one ok=True elapsed_ms=118.80 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(7,)
+2026-06-07 01:23:07,255 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:24:07,079 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:24:07,199 | INFO | operation=query_one ok=True elapsed_ms=119.55 rows=1 sql=SELECT version() AS v params=()
+2026-06-07 01:24:07,200 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:42:45,899 | INFO | operation=pool_getconn ok=True elapsed_ms=2.17 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:42:45,927 | INFO | operation=query_one ok=False elapsed_ms=23.02 rows=- sql=SELECT version() AS v params=()
+2026-06-07 01:42:45,957 | INFO | operation=pool_putconn ok=True elapsed_ms=0.22 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:42:58,808 | INFO | operation=pool_getconn ok=True elapsed_ms=0.02 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:42:58,821 | INFO | operation=execute ok=False elapsed_ms=8.21 rows=- sql=CREATE TABLE IF NOT EXISTS cotacoes ( id SERIAL PRIMARY KEY, chapas_json TEXT NOT NULL, fitas_json TEXT NOT NULL, outros_json TEXT NOT NULL, desperdicio_pct NUMERIC(6,2) DEFAULT 0, aproveitamento_pct NUMERIC(6,2) DEFAULT 0, total_chapas NUMERIC(12,2) DEFAULT 0, total_fitas NUMERIC(12,2) DEFAULT 0, total_outros NUMERIC(12,2) DEFAULT 0, total_geral NUMERIC(12,2) DEFAULT 0, observacoes TEXT, cliente_id INTEGER, nome_projeto VARCHAR(200), previsao_entrega VARCHAR(20), desconto_global NUMERIC(6,2) DEFAULT 0, criado_em TIMESTAMP DEFAULT NOW() ); -- Adiciona colunas se a tabela ja existir (migracao segura) ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS cliente_id INTEGER; ALTER TABLE cotacoes ADD... params=()
+2026-06-07 01:42:58,825 | INFO | operation=pool_putconn ok=True elapsed_ms=0.03 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:43:04,662 | INFO | operation=pool_getconn ok=True elapsed_ms=918.58 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:43:04,788 | INFO | operation=execute ok=True elapsed_ms=124.96 rows=-1 sql=CREATE TABLE IF NOT EXISTS cotacoes ( id SERIAL PRIMARY KEY, chapas_json TEXT NOT NULL, fitas_json TEXT NOT NULL, outros_json TEXT NOT NULL, desperdicio_pct NUMERIC(6,2) DEFAULT 0, aproveitamento_pct NUMERIC(6,2) DEFAULT 0, total_chapas NUMERIC(12,2) DEFAULT 0, total_fitas NUMERIC(12,2) DEFAULT 0, total_outros NUMERIC(12,2) DEFAULT 0, total_geral NUMERIC(12,2) DEFAULT 0, observacoes TEXT, cliente_id INTEGER, nome_projeto VARCHAR(200), previsao_entrega VARCHAR(20), desconto_global NUMERIC(6,2) DEFAULT 0, criado_em TIMESTAMP DEFAULT NOW() ); -- Adiciona colunas se a tabela ja existir (migracao segura) ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS cliente_id INTEGER; ALTER TABLE cotacoes ADD... params=()
+2026-06-07 01:43:04,912 | INFO | operation=query ok=True elapsed_ms=123.08 rows=15 sql=SELECT id, total_geral, total_chapas, total_fitas, total_outros, aproveitamento_pct, desconto_global, cliente_id, nome_projeto, criado_em, COUNT(*) OVER() AS total_count FROM cotacoes ORDER BY criado_em DESC LIMIT %s OFFSET %s params=[100, 0]
+2026-06-07 01:43:04,922 | INFO | operation=pool_putconn ok=True elapsed_ms=0.05 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:43:04,939 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:43:05,061 | INFO | operation=execute ok=True elapsed_ms=121.05 rows=-1 sql=CREATE TABLE IF NOT EXISTS clientes ( id SERIAL PRIMARY KEY, nome VARCHAR(200) NOT NULL, documento VARCHAR(20), telefone VARCHAR(20), email VARCHAR(150), endereco TEXT, cidade VARCHAR(100), estado CHAR(2), observacoes TEXT, criado_em TIMESTAMP DEFAULT NOW(), atualizado_em TIMESTAMP DEFAULT NOW() ); params=()
+2026-06-07 01:43:05,180 | INFO | operation=query_one ok=True elapsed_ms=118.92 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-07 01:43:05,184 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:43:05,199 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:43:05,319 | INFO | operation=query_one ok=True elapsed_ms=119.14 rows=0 sql=SELECT * FROM clientes WHERE id = %s params=(4,)
+2026-06-07 01:43:05,321 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:43:05,374 | INFO | operation=pool_getconn ok=True elapsed_ms=0.02 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:43:05,497 | INFO | operation=query_one ok=True elapsed_ms=120.71 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(6,)
+2026-06-07 01:43:05,507 | INFO | operation=pool_putconn ok=True elapsed_ms=0.06 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:43:05,516 | INFO | operation=pool_getconn ok=True elapsed_ms=0.02 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:43:05,635 | INFO | operation=query_one ok=True elapsed_ms=117.15 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(7,)
+2026-06-07 01:43:05,637 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:43:06,439 | INFO | operation=pool_getconn ok=True elapsed_ms=0.03 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:43:06,563 | INFO | operation=query_one ok=True elapsed_ms=121.80 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(1,)
+2026-06-07 01:43:06,581 | INFO | operation=pool_putconn ok=True elapsed_ms=0.03 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:43:07,323 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:43:07,442 | INFO | operation=query_one ok=True elapsed_ms=118.93 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(1,)
+2026-06-07 01:43:07,443 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:43:08,138 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:43:08,257 | INFO | operation=query_one ok=True elapsed_ms=118.82 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(1,)
+2026-06-07 01:43:08,260 | INFO | operation=pool_putconn ok=True elapsed_ms=0.03 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:43:12,152 | INFO | operation=pool_getconn ok=True elapsed_ms=0.03 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:43:12,270 | INFO | operation=query_one ok=True elapsed_ms=117.58 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(15,)
+2026-06-07 01:43:12,274 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:43:12,949 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:43:13,068 | INFO | operation=query_one ok=True elapsed_ms=118.57 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(7,)
+2026-06-07 01:43:13,070 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:44:03,090 | INFO | operation=pool_getconn ok=True elapsed_ms=0.03 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:44:03,210 | INFO | operation=execute ok=True elapsed_ms=118.54 rows=-1 sql=CREATE TABLE IF NOT EXISTS cotacoes ( id SERIAL PRIMARY KEY, chapas_json TEXT NOT NULL, fitas_json TEXT NOT NULL, outros_json TEXT NOT NULL, desperdicio_pct NUMERIC(6,2) DEFAULT 0, aproveitamento_pct NUMERIC(6,2) DEFAULT 0, total_chapas NUMERIC(12,2) DEFAULT 0, total_fitas NUMERIC(12,2) DEFAULT 0, total_outros NUMERIC(12,2) DEFAULT 0, total_geral NUMERIC(12,2) DEFAULT 0, observacoes TEXT, cliente_id INTEGER, nome_projeto VARCHAR(200), previsao_entrega VARCHAR(20), desconto_global NUMERIC(6,2) DEFAULT 0, criado_em TIMESTAMP DEFAULT NOW() ); -- Adiciona colunas se a tabela ja existir (migracao segura) ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS cliente_id INTEGER; ALTER TABLE cotacoes ADD... params=()
+2026-06-07 01:44:03,328 | INFO | operation=query_one ok=True elapsed_ms=117.27 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(15,)
+2026-06-07 01:44:03,333 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:44:03,773 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:44:03,894 | INFO | operation=execute ok=True elapsed_ms=121.42 rows=-1 sql=CREATE TABLE IF NOT EXISTS clientes ( id SERIAL PRIMARY KEY, nome VARCHAR(200) NOT NULL, documento VARCHAR(20), telefone VARCHAR(20), email VARCHAR(150), endereco TEXT, cidade VARCHAR(100), estado CHAR(2), observacoes TEXT, criado_em TIMESTAMP DEFAULT NOW(), atualizado_em TIMESTAMP DEFAULT NOW() ); params=()
+2026-06-07 01:44:04,011 | INFO | operation=query_one ok=True elapsed_ms=116.53 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(7,)
+2026-06-07 01:44:04,013 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:44:04,488 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:44:04,606 | INFO | operation=query_one ok=True elapsed_ms=117.03 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(15,)
+2026-06-07 01:44:04,608 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:44:05,552 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:44:05,670 | INFO | operation=query_one ok=True elapsed_ms=116.85 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(15,)
+2026-06-07 01:44:05,671 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:44:05,685 | INFO | operation=pool_getconn ok=True elapsed_ms=0.00 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:44:05,803 | INFO | operation=query_one ok=True elapsed_ms=117.30 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(7,)
+2026-06-07 01:44:05,806 | INFO | operation=pool_putconn ok=True elapsed_ms=0.01 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:45:28,621 | INFO | operation=pool_getconn ok=True elapsed_ms=0.34 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:45:28,744 | INFO | operation=execute ok=True elapsed_ms=120.47 rows=-1 sql=CREATE TABLE IF NOT EXISTS cotacoes ( id SERIAL PRIMARY KEY, chapas_json TEXT NOT NULL, fitas_json TEXT NOT NULL, outros_json TEXT NOT NULL, desperdicio_pct NUMERIC(6,2) DEFAULT 0, aproveitamento_pct NUMERIC(6,2) DEFAULT 0, total_chapas NUMERIC(12,2) DEFAULT 0, total_fitas NUMERIC(12,2) DEFAULT 0, total_outros NUMERIC(12,2) DEFAULT 0, total_geral NUMERIC(12,2) DEFAULT 0, observacoes TEXT, cliente_id INTEGER, nome_projeto VARCHAR(200), previsao_entrega VARCHAR(20), desconto_global NUMERIC(6,2) DEFAULT 0, criado_em TIMESTAMP DEFAULT NOW() ); -- Adiciona colunas se a tabela ja existir (migracao segura) ALTER TABLE cotacoes ADD COLUMN IF NOT EXISTS cliente_id INTEGER; ALTER TABLE cotacoes ADD... params=()
+2026-06-07 01:45:28,868 | INFO | operation=query_one ok=True elapsed_ms=124.26 rows=1 sql=SELECT * FROM cotacoes WHERE id = %s params=(15,)
+2026-06-07 01:45:28,875 | INFO | operation=pool_putconn ok=True elapsed_ms=0.06 rows=- sql=POOL PUTCONN params=None
+2026-06-07 01:45:28,898 | INFO | operation=pool_getconn ok=True elapsed_ms=0.01 rows=- sql=POOL GETCONN params=None
+2026-06-07 01:45:29,016 | INFO | operation=execute ok=True elapsed_ms=117.52 rows=-1 sql=CREATE TABLE IF NOT EXISTS clientes ( id SERIAL PRIMARY KEY, nome VARCHAR(200) NOT NULL, documento VARCHAR(20), telefone VARCHAR(20), email VARCHAR(150), endereco TEXT, cidade VARCHAR(100), estado CHAR(2), observacoes TEXT, criado_em TIMESTAMP DEFAULT NOW(), atualizado_em TIMESTAMP DEFAULT NOW() ); params=()
+2026-06-07 01:45:29,135 | INFO | operation=query_one ok=True elapsed_ms=118.14 rows=1 sql=SELECT * FROM clientes WHERE id = %s params=(7,)
+2026-06-07 01:45:29,136 | INFO | operation=pool_putconn ok=True elapsed_ms=0.02 rows=- sql=POOL PUTCONN params=None
