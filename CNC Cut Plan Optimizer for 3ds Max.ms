@@ -1011,6 +1011,64 @@ fn apiCalcularPrecificacao chapasArr wMm hMm piecesData fitasMultiLinhas priceFe
 )
 
 -- ============================================================
+-- API: Calcular plano de corte (nesting) — POST /cotacoes/nesting/calcular
+-- Retorna #(true, #(boardsUsados, placements)) no formato de chamarPythonPacking,
+-- ou #(false, msgErro) em caso de falha (caller cai para o motor local).
+-- ============================================================
+fn apiCalcularNesting rects binW binD gap allowRot =
+(
+    local tmpDir      = dirSep sysInfo.tempDir
+    local nestingFile = tmpDir + "cnc_nesting_data.txt"
+    local ss = stringStream ""
+
+    format "{" to:ss
+    format "\"bin_w\":%,\"bin_h\":%,\"gap\":%,\"allow_rot\":%,\"pecas\":[" \
+        binW binD gap (if allowRot then "true" else "false") to:ss
+    for i = 1 to rects.count do
+    (
+        format "{\"id\":%,\"nome\":\"\",\"w\":%,\"h\":%}" i rects[i][2] rects[i][3] to:ss
+        if i < rects.count do format "," to:ss
+    )
+    format "]}" to:ss
+
+    local fOut = openFile nestingFile mode:"wt"
+    if fOut == undefined do return #(false, "Erro ao criar arquivo temporario")
+    format "%" (ss as string) to:fOut
+    close fOut
+
+    if not (apiWriteCmd "calcular_nesting") do return #(false, "Erro ao escrever comando")
+    local res = apiExecute()
+    if res.count < 2 or res[1] != "OK" do
+    (
+        local msg = if res.count >= 2 then res[2] else "Sem resposta da API"
+        return #(false, msg)
+    )
+
+    local cab = filterString res[2] "|"
+    local boardsUsados = try (cab[1] as integer) catch 0
+
+    local placements = #()
+    for i = 1 to rects.count do append placements #(0, 0.0, 0.0, false)
+
+    for k = 3 to res.count do
+    (
+        local tok = filterString res[k] ","
+        if tok.count >= 7 do
+        (
+            local pid = try (tok[1] as integer) catch 0
+            local brd = try (tok[2] as integer) catch 0
+            local px  = try (tok[3] as float)   catch 0.0
+            local py  = try (tok[4] as float)   catch 0.0
+            local rot = (tok[7] == "True")
+            if pid >= 1 and pid <= placements.count do
+                placements[pid] = #(brd, px, py, rot)
+        )
+    )
+
+    #(true, #(boardsUsados, placements))
+)
+
+-- ============================================================
 -- API: Buscar cliente por ID — retorna #(nome, doc, tel, email, cid, uf) ou #()
 -- ============================================================
 fn apiGetCliente clienteId =
@@ -1662,6 +1720,20 @@ fn chamarPythonPacking rects binW binD gap allowRot =
     #(boardsUsados, placements)
 )
 
+-- Calcula o plano de corte: API como fonte oficial (apiCalcularNesting),
+-- com fallback para o motor local (chamarPythonPacking/cnc_packing.py)
+-- se a API estiver offline ou a chamada falhar.
+fn executarPacking rects binW binD gap allowRot =
+(
+    if G_ApiOnline do
+    (
+        local r = apiCalcularNesting rects binW binD gap allowRot
+        if r[1] then return r[2]
+        ::apiAppendLog "maxscript_api_errors.log" ("apiCalcularNesting falhou, usando motor local: " + r[2])
+    )
+    chamarPythonPacking rects binW binD gap allowRot
+)
+
 fn executarMotorDeCorte =
 (
     local binW = G_MainConfig[1]; local binD = G_MainConfig[2]; local gap = G_MainConfig[3]
@@ -1748,7 +1820,7 @@ fn executarMotorDeCorte =
             rects[i][3] = dCorte
         )
 
-        local resultado = chamarPythonPacking rects binW_Util binD_Util gap allowRot
+        local resultado = executarPacking rects binW_Util binD_Util gap allowRot
         if resultado == undefined do continue
 
         local boardsUsados = resultado[1]

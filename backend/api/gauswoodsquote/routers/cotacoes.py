@@ -20,6 +20,7 @@ from ..deps import pagination, build_page
 
 from ..pricing import pv_divisor, pv_com_desconto, abaixo_custo
 from ..pricing_service import PricingInput, PricingResult, calcular_pricing
+from ..nesting_service import NestingInput, NestingResult, calcular_nesting
 
 router = APIRouter()
 _TABLE_READY = False
@@ -419,6 +420,18 @@ def calcular_precificacao(payload: PricingInput):
     do calculo do MaxScript/planilha para esta API.
     """
     return calcular_pricing(payload)
+
+
+@router.post("/nesting/calcular", response_model=NestingResult,
+             summary="Calcular plano de corte (nesting) sem persistir")
+def calcular_plano_corte(payload: NestingInput):
+    """Motor de calculo central de plano de corte (MAXRECTS BSSF).
+
+    Recebe as dimensoes da chapa e a lista de pecas e retorna a posicao
+    (x, y, rotacao) de cada peca em cada chapa, o numero de chapas usadas
+    e o aproveitamento. Nao persiste nada.
+    """
+    return calcular_nesting(payload)
 
 
 @router.post("", response_model=CotacaoOut, status_code=201,

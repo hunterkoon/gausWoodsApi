@@ -33,6 +33,7 @@ CMD_FILE     = os.path.join(TMP, "cnc_api_cmd.txt")
 RESULT_FILE  = os.path.join(TMP, "cnc_api_result.txt")
 COTACAO_FILE = os.path.join(TMP, "cnc_cotacao_data.txt")
 PRICING_FILE = os.path.join(TMP, "cnc_pricing_data.txt")
+NESTING_FILE = os.path.join(TMP, "cnc_nesting_data.txt")
 CLIENT_FILE  = os.path.join(TMP, "cnc_cliente_data.txt")
 DEBUG_FILE   = os.path.join(TMP, "cnc_api_debug.txt")
 LOG_DIR      = os.path.join(os.path.dirname(__file__), "DADOS", "logs")
@@ -2266,6 +2267,41 @@ def handle_calcular_precificacao():
     write_result(lines)
 
 
+def handle_calcular_nesting():
+    """
+    Le cnc_nesting_data.txt (JSON, schema NestingInput) e faz POST
+    /cotacoes/nesting/calcular. Devolve boards_used/aproveitamento na
+    segunda linha e um placement por linha em seguida.
+
+    Usado pelo MaxScript para que o plano de corte tenha a API como fonte
+    oficial; em caso de falha o MaxScript cai para o motor local
+    (cnc_packing.py via python.ExecuteFile).
+    """
+    if not os.path.exists(NESTING_FILE):
+        write_result(["FAIL", "Arquivo de dados de nesting nao encontrado"]); return
+
+    try:
+        with open(NESTING_FILE, "r", encoding="utf-8") as f:
+            raw = f.read()
+    except UnicodeDecodeError:
+        with open(NESTING_FILE, "r", encoding="cp1252") as f:
+            raw = f.read()
+
+    try:
+        payload = json.loads(raw)
+    except Exception as e:
+        write_result(["FAIL", f"JSON invalido: {e}"]); return
+
+    r = _post("/cotacoes/nesting/calcular", payload)
+    if not r:
+        write_result(["FAIL", "Erro ao calcular nesting na API"]); return
+
+    lines = ["OK", f"{r.get('boards_used', 0)}|{r.get('aproveitamento_pct', 0)}"]
+    for p in r.get("placements", []):
+        lines.append(",".join(str(p.get(k, "")) for k in ["id", "board", "x", "y", "w", "h", "rotated"]))
+    write_result(lines)
+
+
 # ---------------------------------------------------------------------------
 # dispatcher
 # ---------------------------------------------------------------------------
@@ -2296,6 +2332,7 @@ def main():
         "update_cotacao_full":       lambda: handle_update_cotacao_full(),
         "update_desconto_cotacao":   lambda: handle_update_desconto_cotacao(params),
         "calcular_precificacao":     lambda: handle_calcular_precificacao(),
+        "calcular_nesting":          lambda: handle_calcular_nesting(),
         "export_cotacao_html":            lambda: handle_export_cotacao_html(params),
         "export_proposta_cliente_html":   lambda: handle_export_proposta_cliente_html(params),
     }
