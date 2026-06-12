@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from ..database import get_db, query, query_one, count
 from ..deps import pagination, build_page
 from ..schemas import ChapaOut, Page
+from ._search_utils import build_nome_condition
 
 router = APIRouter()
 
@@ -36,7 +37,9 @@ def _build_where(nome, marca, subcategoria, espessura_min, espessura_max,
     conds, params = [], []
 
     if nome:
-        conds.append("c.nome ILIKE %s");       params.append(f"%{nome}%")
+        cond, p = build_nome_condition("c.nome", nome)
+        if cond:
+            conds.append(cond); params.extend(p)
     if marca:
         conds.append("m.nome ILIKE %s");       params.append(f"%{marca}%")
     if subcategoria:

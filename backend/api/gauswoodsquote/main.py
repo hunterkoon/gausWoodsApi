@@ -18,7 +18,7 @@ from .config import Settings
 from .database import get_db, init_pool, close_pool
 from .deps import verify_credentials
 from .logging_utils import log_error, log_request
-from .routers import chapas, ferragens, fitas, marcas, categorias, health, cotacoes, fornecedores, clientes
+from .routers import chapas, ferragens, fitas, marcas, categorias, health, cotacoes, fornecedores, clientes, configuracoes
 
 settings = Settings()
 
@@ -37,7 +37,8 @@ async def lifespan(app: FastAPI):
             _conn.autocommit = True
             clientes.ensure_table(_conn)
             cotacoes.ensure_table(_conn)
-            logging.getLogger("startup").info("DDL startup concluído: tabelas clientes e cotacoes prontas.")
+            configuracoes.ensure_table(_conn)
+            logging.getLogger("startup").info("DDL startup concluído: tabelas clientes, cotacoes e configuracoes_gerais prontas.")
         finally:
             _db_pool.putconn(_conn)
     except Exception as exc:
@@ -119,3 +120,4 @@ app.include_router(categorias.router,   prefix="/categorias",   tags=["Categoria
 app.include_router(cotacoes.router,     prefix="/cotacoes",     tags=["Cotações"],         dependencies=_auth)
 app.include_router(fornecedores.router, prefix="/fornecedores", tags=["Fornecedores"],     dependencies=_auth)
 app.include_router(clientes.router,     prefix="/clientes",     tags=["Clientes"],         dependencies=_auth)
+app.include_router(configuracoes.router, prefix="/configuracoes", tags=["Configurações Gerais"], dependencies=_auth)

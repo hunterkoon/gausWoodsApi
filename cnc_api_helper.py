@@ -5,8 +5,13 @@ escreve o resultado em cnc_api_result.txt.
 
 Comandos suportados:
   health_check
-  search_chapas   [nome=X] [espessura_min=X] [espessura_max=X] [limit=X]
-  search_fitas    [nome=X] [limit=X]
+  search_chapas   [nome=X] [marca=X] [fornecedor=X] [espessura_min=X] [espessura_max=X] [valor_min=X] [valor_max=X] [limit=X]
+  search_fitas    [nome=X] [marca=X] [fornecedor=X] [valor_min=X] [valor_max=X] [limit=X]
+  search_ferragens [nome=X] [marca=X] [fornecedor=X] [valor_min=X] [valor_max=X] [limit=X]
+  listar_marcas
+  listar_fornecedores
+  listar_configuracoes
+  atualizar_configuracao chave=X valor=X
   start_api       script_dir=X
   create_cotacao  (lê cnc_cotacao_data.txt do temp dir)
 """
@@ -318,6 +323,66 @@ def handle_health_check():
         write_result(["FAIL", "API indisponível"])
 
 
+def handle_listar_marcas():
+    """GET /marcas — Resultado: OK | id|nome (1 por item)"""
+    r = _get("/marcas")
+    items = _extract_items(r, "marcas") if r is not None else None
+    if items is None:
+        write_result(["FAIL", "Erro ao listar marcas (sem resposta da API)"]); return
+    lines = ["OK"]
+    for it in items:
+        lines.append("|".join(str(x or "") for x in [it.get("id", ""), it.get("nome", "")]))
+    write_result(lines)
+
+
+def handle_listar_fornecedores():
+    """GET /fornecedores — Resultado: OK | id|nome (1 por item)"""
+    r = _get("/fornecedores")
+    items = _extract_items(r, "fornecedores") if r is not None else None
+    if items is None:
+        write_result(["FAIL", "Erro ao listar fornecedores (sem resposta da API)"]); return
+    lines = ["OK"]
+    for it in items:
+        lines.append("|".join(str(x or "") for x in [it.get("id", ""), it.get("nome", "")]))
+    write_result(lines)
+
+
+def handle_listar_configuracoes():
+    """GET /configuracoes — Resultado: OK | chave|descricao|valor|unidade|categoria (1 por item)"""
+    r = _get("/configuracoes")
+    items = _extract_items(r, "configuracoes") if r is not None else None
+    if items is None:
+        write_result(["FAIL", "Erro ao listar configuracoes (sem resposta da API)"]); return
+    lines = ["OK"]
+    for it in items:
+        lines.append("|".join(str(x if x is not None else "") for x in [
+            it.get("chave", ""), it.get("descricao", ""), it.get("valor", ""),
+            it.get("unidade", ""), it.get("categoria", ""),
+        ]))
+    write_result(lines)
+
+
+def handle_atualizar_configuracao(params_raw: list):
+    """PUT /configuracoes/{chave} — atualiza o valor de uma configuracao geral."""
+    chave = ""
+    valor = ""
+    for p in params_raw:
+        if p.startswith("chave="):
+            chave = p[6:]
+        elif p.startswith("valor="):
+            valor = p[6:]
+    if not chave or not valor:
+        write_result(["FAIL", "chave e valor sao obrigatorios"]); return
+    try:
+        valor_f = float(valor.replace(",", "."))
+    except ValueError:
+        write_result(["FAIL", "Valor invalido"]); return
+    r = _put(f"/configuracoes/{chave}", {"valor": valor_f})
+    if not r or "chave" not in r:
+        write_result(["FAIL", "Erro ao atualizar configuracao"]); return
+    write_result(["OK", r["chave"], str(r.get("valor", valor_f))])
+
+
 def handle_search_chapas(params_raw: list):
     params = {}
     for p in params_raw:
@@ -332,14 +397,20 @@ def handle_search_chapas(params_raw: list):
         api_params["nome"] = params["nome"]
     if "espessura_min" in params:  api_params["espessura_min"] = params["espessura_min"]
     if "espessura_max" in params:  api_params["espessura_max"] = params["espessura_max"]
-    if "fornecedor" in params:     api_params["fornecedor"]    = params["fornecedor"]
+    if "fornecedor" in params and params["fornecedor"]:
+        api_params["fornecedor"] = params["fornecedor"]
+    if "marca" in params and params["marca"]:
+        api_params["marca"] = params["marca"]
     if "subcategoria" in params and params["subcategoria"]:
         api_params["subcategoria"] = params["subcategoria"]
         _write_debug(f"subcategoria enviada: '{params['subcategoria']}'")
 
     # Filtrar apenas chapas com preço real (valor > 0)
     # Sem esse filtro, ~68% dos resultados têm valor=0 e poluem a grid
-    api_params["valor_min"] = "0.01"
+    # Usuario pode elevar o piso via valor_min; teto opcional via valor_max
+    api_params["valor_min"] = params.get("valor_min") or "0.01"
+    if "valor_max" in params and params["valor_max"]:
+        api_params["valor_max"] = params["valor_max"]
 
     r = _get("/chapas", api_params)
     if r is None:
@@ -383,10 +454,16 @@ def handle_search_fitas(params_raw: list):
     api_params = {"limit": str(min(limit_req * 5, 200)), "page": page}
     if "nome" in params and params["nome"]:
         api_params["nome"] = params["nome"]
+    if "marca" in params and params["marca"]:
+        api_params["marca"] = params["marca"]
+    if "fornecedor" in params and params["fornecedor"]:
+        api_params["fornecedor"] = params["fornecedor"]
+    if "valor_max" in params and params["valor_max"]:
+        api_params["valor_max"] = params["valor_max"]
 
     # Filtrar apenas rolos reais (rolo_min=1m) — exclui acessórios como aplicadores
     api_params["rolo_min"] = "1"
-    api_params["valor_min"] = "0.01"
+    api_params["valor_min"] = params.get("valor_min") or "0.01"
 
     r = _get("/fitas", api_params)
     if r is None:
@@ -438,10 +515,16 @@ def handle_search_ferragens(params_raw: list):
     api_params = {
         "limit":     params.get("limit", "20"),
         "page":      params.get("page",  "1"),
-        "valor_min": "0.01",
+        "valor_min": params.get("valor_min") or "0.01",
     }
     if "nome" in params and params["nome"]:
         api_params["nome"] = params["nome"]
+    if "marca" in params and params["marca"]:
+        api_params["marca"] = params["marca"]
+    if "fornecedor" in params and params["fornecedor"]:
+        api_params["fornecedor"] = params["fornecedor"]
+    if "valor_max" in params and params["valor_max"]:
+        api_params["valor_max"] = params["valor_max"]
 
     r = _get("/ferragens", api_params)
     if r is None:
@@ -973,58 +1056,9 @@ def handle_update_cotacao_full():
     if not r or "id" not in r:
         write_result(["FAIL", f"Erro ao atualizar cotacao {cotacao_id}"]); return
 
-    # Patch direto para campos que o endpoint pode não cobrir ainda
-    try:
-        import psycopg2
-        conn = psycopg2.connect(
-            "host=2.25.180.127 port=5432 dbname=postgres user=postgres password=hunter123"
-        )
-        conn.autocommit = False
-        cur = conn.cursor()
-        patch = {}
-        # Custo efetivo — sempre atualiza quando presente
-        for col in ["custo_efetivo_chapas","custo_efetivo_fitas","custo_efetivo_outros","custo_efetivo_geral"]:
-            if col in data:
-                patch[col] = float(data[col] or 0)
-        # Custo produto — atualiza sempre (inclui 0 para refletir remoções de itens)
-        # Sem a restricao > 0 do codigo anterior, que impedia zerar apos remover ferragens
-        for col in ["custo_produto_fitas","custo_produto_outros","custo_produto_geral"]:
-            if col in data:
-                patch[col] = float(data[col] or 0)
-        # custo_produto_chapas: so atualiza se vier positivo (nao muda na edicao de fitas/outros)
-        if "custo_produto_chapas" in data and float(data["custo_produto_chapas"] or 0) > 0:
-            patch["custo_produto_chapas"] = float(data["custo_produto_chapas"])
-        # mao_obra — atualiza sempre quando presente (pode ser zerado)
-        if "mao_obra" in data:
-            patch["mao_obra"] = float(data["mao_obra"] or 0)
-        if "mao_obra_manual" in data:
-            patch["mao_obra_manual"] = bool(data["mao_obra_manual"])
-        # Modelo CMC+Markup v9 — recalculados pelo MaxScript na edicao
-        # Todos os campos sao atualizados inclusive quando zerados (ex: frete removido)
-        for col in ["custo_aquisicao_total", "custo_material_consumido",
-                    "custo_operacional_base", "margem_lucro_pct", "preco_venda_final",
-                    "imposto_pct", "comissao_pct"]:
-            if col in data:
-                patch[col] = float(data[col] or 0)
-        if "ferragens" in data:
-            ferr_raw = data["ferragens"]
-            patch["ferragens_json"] = json.dumps(ferr_raw, ensure_ascii=False) \
-                if isinstance(ferr_raw, list) else ferr_raw
-        if "pecas_json" in data:
-            patch["pecas_json"] = data["pecas_json"]
-        if patch:
-            sets = ", ".join(f"{k} = %s" for k in patch)
-            vals = list(patch.values()) + [int(cotacao_id)]
-            cur.execute(f"UPDATE cotacoes SET {sets} WHERE id = %s", vals)
-            conn.commit()
-    except Exception as e_db:
-        _write_debug(f"handle_update_cotacao_full: DB patch falhou — {e_db}")
-    finally:
-        try: cur.close()
-        except: pass
-        try: conn.close()
-        except: pass
-
+    # Fase 3 (handoff): patch psycopg2 removido — PUT /cotacoes/{id} persiste
+    # todos os campos (custo_efetivo_*, custo_produto_*, mao_obra, CMC/COB/PV,
+    # ferragens_json, pecas_json). Toda escrita passa pela API.
     write_result(["OK", str(r["id"]), f"total={r.get('total_geral', 0)}"])
 
 
@@ -2117,9 +2151,8 @@ def handle_export_proposta_cliente_html(params_raw: list):
 def handle_create_cotacao():
     """
     Lê cnc_cotacao_data.txt (JSON) e faz POST /cotacoes.
-    Após criar o registro, faz UPDATE direto no DB para salvar campos
-    que o endpoint FastAPI ainda não conhece:
-      custo_efetivo_*, ferragens_json, pecas_json.
+    O endpoint persiste todos os campos (custo_efetivo_*, custo_produto_*,
+    ferragens_json, pecas_json, CMC/COB/PV, snapshot) — sem patch direto no DB.
     """
     if not os.path.exists(COTACAO_FILE):
         write_result(["FAIL", "Arquivo de dados da cotação não encontrado"]); return
@@ -2143,83 +2176,8 @@ def handle_create_cotacao():
 
     cot_id = r["id"]
 
-    # ── Patch direto no DB para campos não cobertos pelo endpoint ──────────
-    try:
-        import psycopg2
-        conn = psycopg2.connect(
-            "host=2.25.180.127 port=5432 dbname=postgres user=postgres password=hunter123"
-        )
-        conn.autocommit = False
-        cur = conn.cursor()
-
-        # Serializa arrays como JSON strings para colunas TEXT
-        ferragens_raw = payload.get("ferragens", [])
-        ferragens_str = json.dumps(ferragens_raw, ensure_ascii=False) if ferragens_raw else None
-
-        pecas_raw = payload.get("pecas_json", [])
-        # pecas_json pode vir como lista (JSON array) ou como string já serializada
-        if isinstance(pecas_raw, list):
-            pecas_str = json.dumps(pecas_raw, ensure_ascii=False) if pecas_raw else None
-        elif isinstance(pecas_raw, str) and pecas_raw not in ("", "[]"):
-            pecas_str = pecas_raw
-        else:
-            pecas_str = None
-
-        cur.execute("""
-            UPDATE cotacoes
-               SET custo_efetivo_chapas      = %s,
-                   custo_efetivo_fitas       = %s,
-                   custo_efetivo_outros      = %s,
-                   custo_efetivo_geral       = %s,
-                   ferragens_json            = %s,
-                   pecas_json                = %s,
-                   custo_produto_chapas      = %s,
-                   custo_produto_fitas       = %s,
-                   custo_produto_outros      = %s,
-                   custo_produto_geral       = %s,
-                   mao_obra                  = %s,
-                   mao_obra_manual           = %s,
-                   custo_aquisicao_total     = %s,
-                   custo_material_consumido  = %s,
-                   custo_operacional_base    = %s,
-                   margem_lucro_pct          = %s,
-                   preco_venda_final         = %s,
-                   imposto_pct               = %s,
-                   comissao_pct              = %s
-             WHERE id = %s
-        """, (
-            float(payload.get("custo_efetivo_chapas", 0) or 0),
-            float(payload.get("custo_efetivo_fitas",  0) or 0),
-            float(payload.get("custo_efetivo_outros", 0) or 0),
-            float(payload.get("custo_efetivo_geral",  0) or 0),
-            ferragens_str,
-            pecas_str,
-            float(payload.get("custo_produto_chapas", 0) or 0),
-            float(payload.get("custo_produto_fitas",  0) or 0),
-            float(payload.get("custo_produto_outros", 0) or 0),
-            float(payload.get("custo_produto_geral",  0) or 0),
-            float(payload.get("mao_obra", 0) or 0),
-            bool(payload.get("mao_obra_manual", False)),
-            float(payload.get("custo_aquisicao_total",    0) or 0),
-            float(payload.get("custo_material_consumido", 0) or 0),
-            float(payload.get("custo_operacional_base",   0) or 0),
-            float(payload.get("margem_lucro_pct",         0) or 0),
-            float(payload.get("preco_venda_final",        0) or 0),
-            float(payload.get("imposto_pct",              0) or 0),
-            float(payload.get("comissao_pct",             0) or 0),
-            cot_id,
-        ))
-        conn.commit()
-        _write_debug(f"handle_create_cotacao: patch OK para id={cot_id}")
-    except Exception as e_db:
-        _write_debug(f"handle_create_cotacao: patch DB falhou — {e_db}")
-    finally:
-        try: cur.close()
-        except: pass
-        try: conn.close()
-        except: pass
-    # ─────────────────────────────────────────────────────────────────────
-
+    # Fase 3 (handoff): patch psycopg2 removido — POST /cotacoes ja persiste
+    # todos os campos via API. O helper nao acessa mais o banco diretamente.
     write_result([
         "OK",
         str(cot_id),
@@ -2235,8 +2193,8 @@ def handle_calcular_precificacao():
     em uma linha pipe-delimited e os warnings nas linhas seguintes.
 
     Usado pelo MaxScript para que o calculo de precificacao tenha a API
-    como fonte oficial; em caso de falha o MaxScript cai para o calculo
-    local (mesma formula, replicada de gauswoodsquote.pricing).
+    como fonte oficial. Sem fallback local: se a chamada falhar, o
+    MaxScript exibe o erro e aborta o registro da cotacao.
     """
     if not os.path.exists(PRICING_FILE):
         write_result(["FAIL", "Arquivo de dados de precificacao nao encontrado"]); return
@@ -2274,8 +2232,8 @@ def handle_calcular_nesting():
     segunda linha e um placement por linha em seguida.
 
     Usado pelo MaxScript para que o plano de corte tenha a API como fonte
-    oficial; em caso de falha o MaxScript cai para o motor local
-    (cnc_packing.py via python.ExecuteFile).
+    oficial. Sem fallback local: se a chamada falhar, o MaxScript exibe o
+    erro e aborta o calculo do plano de corte.
     """
     if not os.path.exists(NESTING_FILE):
         write_result(["FAIL", "Arquivo de dados de nesting nao encontrado"]); return
@@ -2319,6 +2277,10 @@ def main():
         "search_chapas":             lambda: handle_search_chapas(params),
         "search_fitas":              lambda: handle_search_fitas(params),
         "search_ferragens":          lambda: handle_search_ferragens(params),
+        "listar_marcas":             lambda: handle_listar_marcas(),
+        "listar_fornecedores":       lambda: handle_listar_fornecedores(),
+        "listar_configuracoes":      lambda: handle_listar_configuracoes(),
+        "atualizar_configuracao":    lambda: handle_atualizar_configuracao(params),
         "start_api":                 lambda: handle_start_api(params),
         "create_cotacao":            lambda: handle_create_cotacao(),
         "search_clientes":           lambda: handle_search_clientes(params),

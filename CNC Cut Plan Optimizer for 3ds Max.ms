@@ -545,13 +545,73 @@ fn apiHealthCheck =
     false
 )
 
-fn apiSearchChapas nome espMin espMax subcategoria:"" page:1 =
+fn apiListarMarcas =
+(
+    local params = #()
+    if not (apiWriteCmd "listar_marcas" params:params) do return #()
+    local res = apiExecute()
+    if res.count < 1 or res[1] != "OK" do return #()
+
+    local items = #()
+    for k = 2 to res.count do
+    (
+        local tok = filterString res[k] "|"
+        if tok.count >= 2 do append items #(tok[1] as integer, tok[2])
+    )
+    items
+)
+
+fn apiListarFornecedores =
+(
+    local params = #()
+    if not (apiWriteCmd "listar_fornecedores" params:params) do return #()
+    local res = apiExecute()
+    if res.count < 1 or res[1] != "OK" do return #()
+
+    local items = #()
+    for k = 2 to res.count do
+    (
+        local tok = filterString res[k] "|"
+        if tok.count >= 2 do append items #(tok[1] as integer, tok[2])
+    )
+    items
+)
+
+fn apiListarConfiguracoes =
+(
+    local params = #()
+    if not (apiWriteCmd "listar_configuracoes" params:params) do return #()
+    local res = apiExecute()
+    if res.count < 1 or res[1] != "OK" do return #()
+
+    local items = #()
+    for k = 2 to res.count do
+    (
+        local tok = filterString res[k] "|"
+        if tok.count >= 5 do append items #(tok[1], tok[2], tok[3] as float, tok[4], tok[5])
+    )
+    items
+)
+
+fn apiAtualizarConfiguracao chave valor =
+(
+    local params = #(("chave=" + chave), ("valor=" + (valor as string)))
+    if not (apiWriteCmd "atualizar_configuracao" params:params) do return false
+    local res = apiExecute()
+    res.count >= 1 and res[1] == "OK"
+)
+
+fn apiSearchChapas nome espMin espMax subcategoria:"" marca:"" fornecedor:"" valorMin:0.0 valorMax:0.0 page:1 =
 (
     local params = #()
     if nome != ""          do append params ("nome=" + nome)
     if espMin > 0          do append params ("espessura_min=" + (espMin as string))
     if espMax > 0          do append params ("espessura_max=" + (espMax as string))
     if subcategoria != ""  do append params ("subcategoria=" + subcategoria)
+    if marca != ""         do append params ("marca=" + marca)
+    if fornecedor != ""    do append params ("fornecedor=" + fornecedor)
+    if valorMin > 0        do append params ("valor_min=" + (valorMin as string))
+    if valorMax > 0        do append params ("valor_max=" + (valorMax as string))
     append params "limit=30"
     append params ("page=" + (page as string))
 
@@ -586,10 +646,14 @@ fn apiSearchChapas nome espMin espMax subcategoria:"" page:1 =
     items
 )
 
-fn apiSearchFitas nome page:1 =
+fn apiSearchFitas nome marca:"" fornecedor:"" valorMin:0.0 valorMax:0.0 page:1 =
 (
     local params = #()
-    if nome != "" do append params ("nome=" + nome)
+    if nome != ""       do append params ("nome=" + nome)
+    if marca != ""      do append params ("marca=" + marca)
+    if fornecedor != "" do append params ("fornecedor=" + fornecedor)
+    if valorMin > 0     do append params ("valor_min=" + (valorMin as string))
+    if valorMax > 0     do append params ("valor_max=" + (valorMax as string))
     append params "limit=20"
     append params ("page=" + (page as string))
 
@@ -623,10 +687,14 @@ fn apiSearchFitas nome page:1 =
 -- ============================================================
 -- API: Buscar ferragens — retorna array de #(id, nome, marca, valor, fornecedor)
 -- ============================================================
-fn apiSearchFerragens nome page:1 =
+fn apiSearchFerragens nome marca:"" fornecedor:"" valorMin:0.0 valorMax:0.0 page:1 =
 (
     local params = #()
-    if nome != "" do append params ("nome=" + nome)
+    if nome != ""       do append params ("nome=" + nome)
+    if marca != ""      do append params ("marca=" + marca)
+    if fornecedor != "" do append params ("fornecedor=" + fornecedor)
+    if valorMin > 0     do append params ("valor_min=" + (valorMin as string))
+    if valorMax > 0     do append params ("valor_max=" + (valorMax as string))
     append params ("page=" + (page as string))
     append params "limit=20"
 
@@ -966,6 +1034,17 @@ fn apiCalcularPrecificacao chapasArr wMm hMm piecesData fitasMultiLinhas priceFe
     format "\"price_frete\":%," priceFrete to:ss
     format "\"price_mao_obra\":%," priceMaoObra to:ss
     format "\"mao_obra_manual\":%," (if moManual then "true" else "false") to:ss
+    -- Modelo detalhado de MO: envia os coeficientes da aba Mao de Obra para a
+    -- API calcular a MO automatica com a formula oficial (centralizada la).
+    format "\"mo_params\":{\"base_fixa\":%,\"k_peca\":%,\"k_corte_m\":%,\"k_fita_m\":%,\"k_ferragem\":%,\"k_peso_kg\":%,\"densidade_kg_m3\":%}," \
+        (try (::G_MO_BasFixa as float) catch 50.0) \
+        (try (::G_MO_KPeca as float) catch 2.5) \
+        (try (::G_MO_KCorteM as float) catch 0.8) \
+        (try (::G_MO_KFita as float) catch 0.3) \
+        (try (::G_MO_KFerragem as float) catch 5.0) \
+        (try (::G_MO_KPeso as float) catch 0.2) \
+        (try (::G_MO_Densidade as float) catch 700.0) to:ss
+    format "\"n_ferragens\":%," (::G_FerragensLista.count) to:ss
     format "\"margem_pct\":%," margemPct to:ss
     format "\"imposto_pct\":%," impostoPct to:ss
     format "\"comissao_pct\":%," comissaoPct to:ss
@@ -1011,9 +1090,70 @@ fn apiCalcularPrecificacao chapasArr wMm hMm piecesData fitasMultiLinhas priceFe
 )
 
 -- ============================================================
+-- API: Precificacao na EDICAO de cotacao salva (Fase 2 do handoff).
+-- Sem pecas/chapas: envia fitas + custos diretos + CMC pre-calculado
+-- (cpChapas + fitas) como custo_produto_geral. A API devolve COB/PV
+-- oficiais — o .ms nao recalcula mais preco na edicao.
+-- Retorna #(true, #(cmc, cob, pvBruto, pvFinal, descontoValor, abaixoCusto)) ou #(false, msg).
+-- ============================================================
+fn apiCalcularPrecificacaoEdicao fitasEdit totalFerr cola frete maoObra margemPct impostoPct comissaoPct descontoPct cmcPreCalc =
+(
+    local tmpDir      = dirSep sysInfo.tempDir
+    local pricingFile = tmpDir + "cnc_pricing_data.txt"
+    local ss = stringStream ""
+
+    format "{" to:ss
+    format "\"fitas\":[" to:ss
+    for i = 1 to fitasEdit.count do
+    (
+        local ft = fitasEdit[i]
+        -- ft = #(produto, metros, valor_m, subtotal)
+        format "{\"nome\":\"%\",\"metros\":%,\"valor_m\":%,\"rolo_m\":50.0}" \
+            (substituteString (ft[1] as string) "\"" "'") ft[2] ft[3] to:ss
+        if i < fitasEdit.count do format "," to:ss
+    )
+    format "]," to:ss
+    format "\"price_ferragem\":%," totalFerr to:ss
+    format "\"price_cola\":%," cola to:ss
+    format "\"price_frete\":%," frete to:ss
+    format "\"price_mao_obra\":%," maoObra to:ss
+    format "\"mao_obra_manual\":true," to:ss
+    format "\"margem_pct\":%," margemPct to:ss
+    format "\"imposto_pct\":%," impostoPct to:ss
+    format "\"comissao_pct\":%," comissaoPct to:ss
+    format "\"desconto_global\":%," descontoPct to:ss
+    format "\"custo_produto_geral\":%" cmcPreCalc to:ss
+    format "}" to:ss
+
+    local fOut = openFile pricingFile mode:"wt"
+    if fOut == undefined do return #(false, "Erro ao criar arquivo temporario")
+    format "%" (ss as string) to:fOut
+    close fOut
+
+    if not (apiWriteCmd "calcular_precificacao") do return #(false, "Erro ao escrever comando")
+    local res = apiExecute()
+    if res.count < 2 or res[1] != "OK" do
+    (
+        local msg = if res.count >= 2 then res[2] else "Sem resposta da API"
+        return #(false, msg)
+    )
+
+    local tok = filterString res[2] "|"
+    if tok.count < 13 do return #(false, "Resposta incompleta da API")
+
+    #(true, #(
+        try (tok[1] as float) catch 0.0,    -- cmc
+        try (tok[2] as float) catch 0.0,    -- cob
+        try (tok[3] as float) catch 0.0,    -- preco_venda (PV bruto)
+        try (tok[4] as float) catch 0.0,    -- total_com_desc (PV final)
+        try (tok[5] as float) catch 0.0,    -- desconto_valor
+        (tok[8] == "True")                  -- abaixo_custo
+    ))
+)
+
+-- ============================================================
 -- API: Calcular plano de corte (nesting) — POST /cotacoes/nesting/calcular
--- Retorna #(true, #(boardsUsados, placements)) no formato de chamarPythonPacking,
--- ou #(false, msgErro) em caso de falha (caller cai para o motor local).
+-- Retorna #(true, #(boardsUsados, placements)) ou #(false, msgErro).
 -- ============================================================
 fn apiCalcularNesting rects binW binD gap allowRot =
 (
@@ -1645,93 +1785,23 @@ fn sortWidthDesc a b = (
 
 -- ============================================================
 -- FASE 3: MOTOR DE CORTE (Executado apÃ³s selecionar fitas)
--- Packing delegado ao Python (MAXRECTS) via JSON temporÃ¡rio
+-- Packing calculado pela API (MAXRECTS) via apiCalcularNesting
 -- ============================================================
 
-fn chamarPythonPacking rects binW binD gap allowRot =
-(
-    -- BUG-FIX: usa G_ScriptDir (definido no carregamento) em vez de getThisScriptFilename()
-    local pyScript = (dirSep G_ScriptDir) + "cnc_packing.py"
-    local tmpDir   = dirSep sysInfo.tempDir
-    local tmpIn    = tmpDir + "cnc_input.txt"
-    local tmpOut   = tmpDir + "cnc_output.txt"
-
-    -- Escreve arquivo de entrada em formato simples (sem JSON)
-    local fOut = openFile tmpIn mode:"wt"
-    if fOut == undefined do ( messageBox ("Erro ao criar:\n" + tmpIn) title:"Erro Python"; return undefined )
-
-    format "%\n" binW to:fOut
-    format "%\n" binD to:fOut
-    format "%\n" gap  to:fOut
-    format "%\n" (if allowRot then 1 else 0) to:fOut
-    format "%\n" rects.count to:fOut
-    for i = 1 to rects.count do
-        format "% % %\n" i rects[i][2] rects[i][3] to:fOut
-    close fOut
-
-    python.ExecuteFile pyScript
-
-    local err = python.GetLastError()
-    if err != "" do ( messageBox ("Erro Python:\n" + err) title:"Erro Packing"; return undefined )
-
-    -- LÃª resultado linha a linha
-    local fIn = openFile tmpOut mode:"rt"
-    if fIn == undefined do ( messageBox ("Saida nao encontrada:\n" + tmpOut) title:"Erro Python"; return undefined )
-    local linhas = #()
-    while not eof fIn do append linhas (readline fIn)
-    close fIn
-
-    if linhas.count == 0 or linhas[1] != "OK" do
-    (
-        local errMsg = if linhas.count > 1 then linhas[2] else "Saida vazia"
-        messageBox ("Python retornou erro:\n" + errMsg) title:"Erro Packing"
-        return undefined
-    )
-
-    -- Monta array de placements: placements[id] = #(board, x, y, rotated)
-    local boardsUsados = 0
-    local placements   = #()
-    for k = 1 to rects.count do append placements #(0, 0.0, 0.0, false)
-
-    for k = 2 to linhas.count do
-    (
-        local ln = linhas[k]
-        if matchPattern ln pattern:"boards_used=*" then
-        (
-            boardsUsados = (substring ln 13 -1) as integer
-        )
-        else if ln.count > 0 and not matchPattern ln pattern:"*=*" then
-        (
-            -- formato: id,board,x,y,rotated
-            local tok = filterString ln ","
-            if tok.count == 5 do
-            (
-                local pid = tok[1] as integer
-                local brd = tok[2] as integer
-                local px  = tok[3] as float
-                local py  = tok[4] as float
-                local rot = (tok[5] == "1")
-                if pid >= 1 and pid <= placements.count do
-                    placements[pid] = #(brd, px, py, rot)
-            )
-        )
-    )
-
-    #(boardsUsados, placements)
-)
-
--- Calcula o plano de corte: API como fonte oficial (apiCalcularNesting),
--- com fallback para o motor local (chamarPythonPacking/cnc_packing.py)
--- se a API estiver offline ou a chamada falhar.
+-- Calcula o plano de corte via API (POST /cotacoes/nesting/calcular).
+-- Sem fallback local: se a API estiver offline ou a chamada falhar,
+-- exibe o erro e retorna undefined (caller deve abortar).
 fn executarPacking rects binW binD gap allowRot =
 (
-    if G_ApiOnline do
+    if not G_ApiOnline do
     (
-        local r = apiCalcularNesting rects binW binD gap allowRot
-        if r[1] then return r[2]
-        ::apiAppendLog "maxscript_api_errors.log" ("apiCalcularNesting falhou, usando motor local: " + r[2])
+        messageBox "API offline: nao e possivel calcular o plano de corte." title:"Erro Packing"
+        return undefined
     )
-    chamarPythonPacking rects binW binD gap allowRot
+    local r = apiCalcularNesting rects binW binD gap allowRot
+    if r[1] then return r[2]
+    messageBox ("Erro ao calcular plano de corte na API:\n" + r[2]) title:"Erro Packing"
+    undefined
 )
 
 fn executarMotorDeCorte =
@@ -2028,7 +2098,7 @@ fn abrirBuscaChapaAPI espIdx espMm =
     G_TempSearchResults = #()
     G_BuscaChapaEspMm = espMm
 
-    rollout rlBuscaChapa "Buscar Chapa na API" width:860 height:608
+    rollout rlBuscaChapa "Buscar Chapa na API" width:860 height:646
     (
         dotNetControl lbInfo      "System.Windows.Forms.Label"       pos:[12,12]  width:620 height:18
         dotNetControl lbCategoria "System.Windows.Forms.Label"       pos:[12,42]  width:90  height:18
@@ -2036,19 +2106,29 @@ fn abrirBuscaChapaAPI espIdx espMm =
         dotNetControl lbNome      "System.Windows.Forms.Label"       pos:[168,42] width:90  height:18
         dotNetControl txtNome     "System.Windows.Forms.TextBox"     pos:[168,62] width:520 height:24
         dotNetControl btnSearch   "System.Windows.Forms.Button"      pos:[704,60] width:140 height:28
+        -- Filtros adicionais (marca, fornecedor, faixa de preco)
+        dotNetControl lbMarca      "System.Windows.Forms.Label"      pos:[12,96]  width:50  height:18
+        dotNetControl cbMarca      "System.Windows.Forms.ComboBox"   pos:[12,114] width:160 height:24
+        dotNetControl lbFornecedor "System.Windows.Forms.Label"      pos:[182,96] width:80  height:18
+        dotNetControl cbFornecedor "System.Windows.Forms.ComboBox"   pos:[182,114] width:200 height:24
+        dotNetControl lbValorMin   "System.Windows.Forms.Label"      pos:[392,96] width:60  height:18
+        dotNetControl txtValorMin  "System.Windows.Forms.TextBox"    pos:[392,114] width:80 height:24
+        dotNetControl lbValorMax   "System.Windows.Forms.Label"      pos:[480,96] width:60  height:18
+        dotNetControl txtValorMax  "System.Windows.Forms.TextBox"    pos:[480,114] width:80 height:24
+        dotNetControl btnLimparFiltros "System.Windows.Forms.Button" pos:[704,112] width:140 height:26
         -- Paginacao
-        dotNetControl btnPrev     "System.Windows.Forms.Button"      pos:[12,96]  width:100 height:26
-        dotNetControl lbPag       "System.Windows.Forms.Label"       pos:[120,102] width:80 height:16
-        dotNetControl btnNext     "System.Windows.Forms.Button"      pos:[208,96] width:100 height:26
-        -- Grid e detalhes (deslocados 32px para baixo)
-        dotNetControl grid        "System.Windows.Forms.DataGridView" pos:[12,130] width:832 height:330
-        dotNetControl lbStatus    "System.Windows.Forms.Label"       pos:[12,470] width:832 height:18
-        dotNetControl lbDetail1   "System.Windows.Forms.Label"       pos:[12,494] width:832 height:18
-        dotNetControl lbDetail2   "System.Windows.Forms.Label"       pos:[12,516] width:832 height:18
-        dotNetControl btnUsar     "System.Windows.Forms.Button"      pos:[608,546] width:236 height:30
-        dotNetControl btnCancel   "System.Windows.Forms.Button"      pos:[12,546]  width:120 height:30
-        dotNetControl btnDebug    "System.Windows.Forms.Button"      pos:[148,546] width:120 height:30
-        dotNetControl lbLoad      "System.Windows.Forms.Label"       pos:[12,584]  width:832 height:16
+        dotNetControl btnPrev     "System.Windows.Forms.Button"      pos:[12,150]  width:100 height:26
+        dotNetControl lbPag       "System.Windows.Forms.Label"       pos:[120,156] width:80 height:16
+        dotNetControl btnNext     "System.Windows.Forms.Button"      pos:[208,150] width:100 height:26
+        -- Grid e detalhes
+        dotNetControl grid        "System.Windows.Forms.DataGridView" pos:[12,184] width:832 height:330
+        dotNetControl lbStatus    "System.Windows.Forms.Label"       pos:[12,524] width:832 height:18
+        dotNetControl lbDetail1   "System.Windows.Forms.Label"       pos:[12,548] width:832 height:18
+        dotNetControl lbDetail2   "System.Windows.Forms.Label"       pos:[12,570] width:832 height:18
+        dotNetControl btnUsar     "System.Windows.Forms.Button"      pos:[608,600] width:236 height:30
+        dotNetControl btnCancel   "System.Windows.Forms.Button"      pos:[12,600]  width:120 height:30
+        dotNetControl btnDebug    "System.Windows.Forms.Button"      pos:[148,600] width:120 height:30
+        dotNetControl lbLoad      "System.Windows.Forms.Label"       pos:[12,638]  width:832 height:16
 
         local suppressInitialSearch = false
         local currentPage = 1
@@ -2152,6 +2232,21 @@ fn abrirBuscaChapaAPI espIdx espMm =
             lbPag.Text = "Pag. " + (currentPage as string)
         )
 
+        fn comboValor cmb =
+        (
+            local txt = ""
+            try ( txt = cmb.Text ) catch()
+            if txt == undefined or txt == "(Todas)" then "" else txt
+        )
+
+        fn parseValor txt =
+        (
+            local v = 0.0
+            if txt != undefined and (trimRight (trimLeft txt)) != "" do
+                v = try (txt as float) catch (0.0)
+            v
+        )
+
         fn doSearch =
         (
             local termo = txtNome.Text
@@ -2159,6 +2254,10 @@ fn abrirBuscaChapaAPI espIdx espMm =
             local espMax = G_BuscaChapaEspMm + 0.5
             local catNames = #("", "MDF", "MDP", "Compensado")
             local subcat = catNames[cmbCategoria.SelectedIndex + 1]
+            local marca = comboValor cbMarca
+            local fornecedor = comboValor cbFornecedor
+            local valorMin = parseValor txtValorMin.Text
+            local valorMax = parseValor txtValorMax.Text
 
             lbStatus.Text = "Pesquisando..."
             btnUsar.Enabled = false
@@ -2167,7 +2266,7 @@ fn abrirBuscaChapaAPI espIdx espMm =
             grid.Rows.Clear()
             showLoading()
 
-            G_TempSearchResults = apiSearchChapas termo espMin espMax subcategoria:subcat page:currentPage
+            G_TempSearchResults = apiSearchChapas termo espMin espMax subcategoria:subcat marca:marca fornecedor:fornecedor valorMin:valorMin valorMax:valorMax page:currentPage
             populateGrid()
             hideLoading()
             updatePagButtons()
@@ -2236,6 +2335,11 @@ fn abrirBuscaChapaAPI espIdx espMm =
             btnPrev.Text   = "◄ Anterior"
             btnNext.Text   = "Próximo ►"
             lbPag.Text     = "Pag. 1"
+            lbMarca.Text      = "Marca"
+            lbFornecedor.Text = "Fornecedor"
+            lbValorMin.Text   = "R$ min"
+            lbValorMax.Text   = "R$ max"
+            btnLimparFiltros.Text = "Limpar filtros"
             btnUsar.Enabled = false
             btnPrev.Enabled = false
             btnNext.Enabled = false
@@ -2254,6 +2358,20 @@ fn abrirBuscaChapaAPI espIdx espMm =
             try ( cmbCategoria.Text = cmbCategoria.Items.Item[cmbCategoria.SelectedIndex] ) catch()
             try ( cmbCategoria.BackColor = (dotNetClass "System.Drawing.Color").White ) catch()
             try ( cmbCategoria.ForeColor = (dotNetClass "System.Drawing.Color").FromArgb 27 32 38 ) catch()
+
+            -- Popula combos de marca/fornecedor (com opcao "(Todas)")
+            cbMarca.DropDownStyle = (dotNetClass "System.Windows.Forms.ComboBoxStyle").DropDownList
+            cbMarca.Items.Clear()
+            cbMarca.Items.Add "(Todas)"
+            for it in (apiListarMarcas()) do cbMarca.Items.Add it[2]
+            cbMarca.SelectedIndex = 0
+
+            cbFornecedor.DropDownStyle = (dotNetClass "System.Windows.Forms.ComboBoxStyle").DropDownList
+            cbFornecedor.Items.Clear()
+            cbFornecedor.Items.Add "(Todas)"
+            for it in (apiListarFornecedores()) do cbFornecedor.Items.Add it[2]
+            cbFornecedor.SelectedIndex = 0
+
             ::pintarBotaoPesquisar btnSearch
             ::pintarBotaoProximo btnUsar
             lbStatus.Text = "Clique em Pesquisar para carregar produtos desta espessura."
@@ -2262,6 +2380,15 @@ fn abrirBuscaChapaAPI espIdx espMm =
         on btnSearch Click sender args do
         (
             currentPage = 1   -- nova busca começa sempre na página 1
+            doSearch()
+        )
+        on btnLimparFiltros Click sender args do
+        (
+            cbMarca.SelectedIndex = 0
+            cbFornecedor.SelectedIndex = 0
+            txtValorMin.Text = ""
+            txtValorMax.Text = ""
+            currentPage = 1
             doSearch()
         )
         -- BUG-C-FIX: sempre refaz a busca ao mudar categoria
@@ -2286,6 +2413,10 @@ fn abrirBuscaChapaAPI espIdx espMm =
         -- FIX TECLADO: sintaxe correta para dotNetControl em rollout (não dotNet.addEventHandler)
         on txtNome GotFocus  sender args do ( enableAccelerators = false )
         on txtNome LostFocus sender args do ( enableAccelerators = true  )
+        on txtValorMin GotFocus  sender args do ( enableAccelerators = false )
+        on txtValorMin LostFocus sender args do ( enableAccelerators = true  )
+        on txtValorMax GotFocus  sender args do ( enableAccelerators = false )
+        on txtValorMax LostFocus sender args do ( enableAccelerators = true  )
     )
 
     createDialog rlBuscaChapa style:#(#style_titlebar, #style_border, #style_sysmenu) bgcolor:(color 245 246 248)
@@ -2299,23 +2430,33 @@ fn abrirBuscaFitaAPI acabIdx acabamento =
     G_TempSearchResults = #()
     G_BuscaFitaAcabamento = acabamento
 
-    rollout rlBuscaFita "Buscar Fita de Borda na API" width:760 height:536
+    rollout rlBuscaFita "Buscar Fita de Borda na API" width:760 height:574
     (
         dotNetControl lbInfo    "System.Windows.Forms.Label"       pos:[12,12]  width:720 height:18
         dotNetControl lbNome    "System.Windows.Forms.Label"       pos:[12,42]  width:90  height:18
         dotNetControl txtNome   "System.Windows.Forms.TextBox"     pos:[12,62]  width:570 height:24
         dotNetControl btnSearch "System.Windows.Forms.Button"      pos:[598,60] width:140 height:28
+        -- Filtros adicionais (marca, fornecedor, faixa de preco)
+        dotNetControl lbMarca      "System.Windows.Forms.Label"    pos:[12,96]  width:50  height:18
+        dotNetControl cbMarca      "System.Windows.Forms.ComboBox" pos:[12,114] width:150 height:24
+        dotNetControl lbFornecedor "System.Windows.Forms.Label"    pos:[174,96] width:80  height:18
+        dotNetControl cbFornecedor "System.Windows.Forms.ComboBox" pos:[174,114] width:180 height:24
+        dotNetControl lbValorMin   "System.Windows.Forms.Label"    pos:[366,96] width:60  height:18
+        dotNetControl txtValorMin  "System.Windows.Forms.TextBox"  pos:[366,114] width:70 height:24
+        dotNetControl lbValorMax   "System.Windows.Forms.Label"    pos:[446,96] width:60  height:18
+        dotNetControl txtValorMax  "System.Windows.Forms.TextBox"  pos:[446,114] width:70 height:24
+        dotNetControl btnLimparFiltros "System.Windows.Forms.Button" pos:[598,112] width:140 height:26
         -- Paginacao
-        dotNetControl btnPrev   "System.Windows.Forms.Button"      pos:[12,96]  width:100 height:26
-        dotNetControl lbPag     "System.Windows.Forms.Label"       pos:[120,102] width:70 height:16
-        dotNetControl btnNext   "System.Windows.Forms.Button"      pos:[198,96] width:100 height:26
-        -- Grid e detalhes (deslocados 32px para baixo)
-        dotNetControl grid      "System.Windows.Forms.DataGridView" pos:[12,130] width:726 height:280
-        dotNetControl lbStatus  "System.Windows.Forms.Label"       pos:[12,420] width:726 height:18
-        dotNetControl lbDetail  "System.Windows.Forms.Label"       pos:[12,444] width:726 height:18
-        dotNetControl btnUsar   "System.Windows.Forms.Button"      pos:[518,482] width:220 height:30
-        dotNetControl btnCancel "System.Windows.Forms.Button"      pos:[12,482]  width:120 height:30
-        dotNetControl lbLoad    "System.Windows.Forms.Label"       pos:[12,518]  width:726 height:16
+        dotNetControl btnPrev   "System.Windows.Forms.Button"      pos:[12,150]  width:100 height:26
+        dotNetControl lbPag     "System.Windows.Forms.Label"       pos:[120,156] width:70 height:16
+        dotNetControl btnNext   "System.Windows.Forms.Button"      pos:[198,150] width:100 height:26
+        -- Grid e detalhes
+        dotNetControl grid      "System.Windows.Forms.DataGridView" pos:[12,184] width:726 height:280
+        dotNetControl lbStatus  "System.Windows.Forms.Label"       pos:[12,474] width:726 height:18
+        dotNetControl lbDetail  "System.Windows.Forms.Label"       pos:[12,498] width:726 height:18
+        dotNetControl btnUsar   "System.Windows.Forms.Button"      pos:[518,536] width:220 height:30
+        dotNetControl btnCancel "System.Windows.Forms.Button"      pos:[12,536]  width:120 height:30
+        dotNetControl lbLoad    "System.Windows.Forms.Label"       pos:[12,572]  width:726 height:16
 
         local currentPage = 1
         local pageLimit   = 20
@@ -2412,15 +2553,34 @@ fn abrirBuscaFitaAPI acabIdx acabamento =
             lbPag.Text = "Pag. " + (currentPage as string)
         )
 
+        fn comboValor cmb =
+        (
+            local txt = ""
+            try ( txt = cmb.Text ) catch()
+            if txt == undefined or txt == "(Todas)" then "" else txt
+        )
+
+        fn parseValor txt =
+        (
+            local v = 0.0
+            if txt != undefined and (trimRight (trimLeft txt)) != "" do
+                v = try (txt as float) catch (0.0)
+            v
+        )
+
         fn doSearch =
         (
             local termo = txtNome.Text
+            local marca = comboValor cbMarca
+            local fornecedor = comboValor cbFornecedor
+            local valorMin = parseValor txtValorMin.Text
+            local valorMax = parseValor txtValorMax.Text
             lbStatus.Text = "Pesquisando..."
             btnUsar.Enabled = false
             lbDetail.Text = ""
             grid.Rows.Clear()
             showLoading()
-            G_TempSearchResults = apiSearchFitas termo page:currentPage
+            G_TempSearchResults = apiSearchFitas termo marca:marca fornecedor:fornecedor valorMin:valorMin valorMax:valorMax page:currentPage
             populateGrid()
             hideLoading()
             updatePagButtons()
@@ -2485,6 +2645,11 @@ fn abrirBuscaFitaAPI acabIdx acabamento =
             btnPrev.Text   = "◄ Anterior"
             btnNext.Text   = "Próximo ►"
             lbPag.Text     = "Pag. 1"
+            lbMarca.Text      = "Marca"
+            lbFornecedor.Text = "Fornecedor"
+            lbValorMin.Text   = "R$ min"
+            lbValorMax.Text   = "R$ max"
+            btnLimparFiltros.Text = "Limpar filtros"
             btnUsar.Enabled  = false
             btnPrev.Enabled  = false
             btnNext.Enabled  = false
@@ -2492,13 +2657,39 @@ fn abrirBuscaFitaAPI acabIdx acabamento =
             currentPage = 1
             setupGrid()
             try ( ::aplicarTemaForm lbInfo.FindForm() ) catch()
+
+            cbMarca.DropDownStyle = (dotNetClass "System.Windows.Forms.ComboBoxStyle").DropDownList
+            cbMarca.Items.Clear()
+            cbMarca.Items.Add "(Todas)"
+            for it in (apiListarMarcas()) do cbMarca.Items.Add it[2]
+            cbMarca.SelectedIndex = 0
+
+            cbFornecedor.DropDownStyle = (dotNetClass "System.Windows.Forms.ComboBoxStyle").DropDownList
+            cbFornecedor.Items.Clear()
+            cbFornecedor.Items.Add "(Todas)"
+            for it in (apiListarFornecedores()) do cbFornecedor.Items.Add it[2]
+            cbFornecedor.SelectedIndex = 0
+
             ::pintarBotaoPesquisar btnSearch
             ::pintarBotaoProximo btnUsar
         )
 
         on txtNome GotFocus  sender args do ( enableAccelerators = false )
         on txtNome LostFocus sender args do ( enableAccelerators = true  )
+        on txtValorMin GotFocus  sender args do ( enableAccelerators = false )
+        on txtValorMin LostFocus sender args do ( enableAccelerators = true  )
+        on txtValorMax GotFocus  sender args do ( enableAccelerators = false )
+        on txtValorMax LostFocus sender args do ( enableAccelerators = true  )
         on btnSearch Click sender args do ( currentPage = 1; doSearch() )
+        on btnLimparFiltros Click sender args do
+        (
+            cbMarca.SelectedIndex = 0
+            cbFornecedor.SelectedIndex = 0
+            txtValorMin.Text = ""
+            txtValorMax.Text = ""
+            currentPage = 1
+            doSearch()
+        )
         on btnPrev  Click sender args do ( if currentPage > 1 do ( currentPage -= 1; doSearch() ) )
         on btnNext  Click sender args do ( currentPage += 1; doSearch() )
         on grid SelectionChanged sender args do updateDetail()
@@ -2517,7 +2708,7 @@ fn abrirBuscaFerragemAPI =
 (
     G_TempSearchResults = #()
 
-    rollout rlBuscaFerragem "Buscar Ferragem na API" width:760 height:556
+    rollout rlBuscaFerragem "Buscar Ferragem na API" width:760 height:594
     (
         dotNetControl lbTitulo    "System.Windows.Forms.Label"        pos:[12,12]  width:600 height:18
         dotNetControl lbNome      "System.Windows.Forms.Label"        pos:[12,38]  width:60  height:18
@@ -2525,18 +2716,28 @@ fn abrirBuscaFerragemAPI =
         dotNetControl btnSearch   "System.Windows.Forms.Button"       pos:[486,34] width:140 height:28
         dotNetControl lbQtdLabel  "System.Windows.Forms.Label"        pos:[636,38] width:28  height:18
         dotNetControl txtQtd      "System.Windows.Forms.TextBox"      pos:[668,36] width:80  height:24
+        -- Filtros adicionais (marca, fornecedor, faixa de preco)
+        dotNetControl lbMarca      "System.Windows.Forms.Label"       pos:[12,68]  width:50  height:18
+        dotNetControl cbMarca      "System.Windows.Forms.ComboBox"    pos:[12,86]  width:150 height:24
+        dotNetControl lbFornecedor "System.Windows.Forms.Label"       pos:[174,68] width:80  height:18
+        dotNetControl cbFornecedor "System.Windows.Forms.ComboBox"    pos:[174,86] width:180 height:24
+        dotNetControl lbValorMin   "System.Windows.Forms.Label"       pos:[366,68] width:60  height:18
+        dotNetControl txtValorMin  "System.Windows.Forms.TextBox"     pos:[366,86] width:70  height:24
+        dotNetControl lbValorMax   "System.Windows.Forms.Label"       pos:[446,68] width:60  height:18
+        dotNetControl txtValorMax  "System.Windows.Forms.TextBox"     pos:[446,86] width:70  height:24
+        dotNetControl btnLimparFiltros "System.Windows.Forms.Button"  pos:[598,84] width:140 height:26
         -- Paginacao
-        dotNetControl btnPrev     "System.Windows.Forms.Button"       pos:[12,68]  width:100 height:26
-        dotNetControl lbPag       "System.Windows.Forms.Label"        pos:[120,74] width:70  height:16
-        dotNetControl btnNext     "System.Windows.Forms.Button"       pos:[198,68] width:100 height:26
-        -- Grid e controles deslocados 32px abaixo do original
-        dotNetControl grid        "System.Windows.Forms.DataGridView" pos:[12,100] width:726 height:296
-        dotNetControl lbStatus    "System.Windows.Forms.Label"        pos:[12,404] width:726 height:18
-        dotNetControl lbDetail    "System.Windows.Forms.Label"        pos:[12,426] width:726 height:34
-        dotNetControl btnAdicionar "System.Windows.Forms.Button"      pos:[12,472]  width:260 height:34
-        dotNetControl lbSelecionados "System.Windows.Forms.Label"     pos:[284,478] width:348 height:22
-        dotNetControl btnFechar   "System.Windows.Forms.Button"       pos:[632,472] width:118 height:34
-        dotNetControl lbLoad      "System.Windows.Forms.Label"        pos:[12,514] width:726 height:16
+        dotNetControl btnPrev     "System.Windows.Forms.Button"       pos:[12,106]  width:100 height:26
+        dotNetControl lbPag       "System.Windows.Forms.Label"        pos:[120,112] width:70  height:16
+        dotNetControl btnNext     "System.Windows.Forms.Button"       pos:[198,106] width:100 height:26
+        -- Grid e controles
+        dotNetControl grid        "System.Windows.Forms.DataGridView" pos:[12,138] width:726 height:296
+        dotNetControl lbStatus    "System.Windows.Forms.Label"        pos:[12,442] width:726 height:18
+        dotNetControl lbDetail    "System.Windows.Forms.Label"        pos:[12,464] width:726 height:34
+        dotNetControl btnAdicionar "System.Windows.Forms.Button"      pos:[12,510]  width:260 height:34
+        dotNetControl lbSelecionados "System.Windows.Forms.Label"     pos:[284,516] width:348 height:22
+        dotNetControl btnFechar   "System.Windows.Forms.Button"       pos:[632,510] width:118 height:34
+        dotNetControl lbLoad      "System.Windows.Forms.Label"        pos:[12,552] width:726 height:16
 
         local currentPage = 1
         local pageLimit   = 20
@@ -2640,6 +2841,21 @@ fn abrirBuscaFerragemAPI =
             lbPag.Text = "Pag. " + (currentPage as string)
         )
 
+        fn comboValor cmb =
+        (
+            local txt = ""
+            try ( txt = cmb.Text ) catch()
+            if txt == undefined or txt == "(Todas)" then "" else txt
+        )
+
+        fn parseValor txt =
+        (
+            local v = 0.0
+            if txt != undefined and (trimRight (trimLeft txt)) != "" do
+                v = try (txt as float) catch (0.0)
+            v
+        )
+
         fn doSearch =
         (
             lbStatus.Text = "Pesquisando..."
@@ -2647,7 +2863,11 @@ fn abrirBuscaFerragemAPI =
             lbDetail.Text = ""
             grid.Rows.Clear()
             showLoading()
-            ::G_TempSearchResults = ::apiSearchFerragens txtNome.Text page:currentPage
+            local marca = comboValor cbMarca
+            local fornecedor = comboValor cbFornecedor
+            local valorMin = parseValor txtValorMin.Text
+            local valorMax = parseValor txtValorMax.Text
+            ::G_TempSearchResults = ::apiSearchFerragens txtNome.Text marca:marca fornecedor:fornecedor valorMin:valorMin valorMax:valorMax page:currentPage
             populateGrid()
             hideLoading()
             updatePagButtons()
@@ -2699,6 +2919,11 @@ fn abrirBuscaFerragemAPI =
             btnPrev.Text        = "◄ Anterior"
             btnNext.Text        = "Próximo ►"
             lbPag.Text          = "Pag. 1"
+            lbMarca.Text      = "Marca"
+            lbFornecedor.Text = "Fornecedor"
+            lbValorMin.Text   = "R$ min"
+            lbValorMax.Text   = "R$ max"
+            btnLimparFiltros.Text = "Limpar filtros"
             btnAdicionar.Enabled = false
             btnPrev.Enabled      = false
             btnNext.Enabled      = false
@@ -2706,6 +2931,19 @@ fn abrirBuscaFerragemAPI =
             currentPage = 1
             setupGrid()
             try ( ::aplicarTemaForm lbTitulo.FindForm() ) catch()
+
+            cbMarca.DropDownStyle = (dotNetClass "System.Windows.Forms.ComboBoxStyle").DropDownList
+            cbMarca.Items.Clear()
+            cbMarca.Items.Add "(Todas)"
+            for it in (apiListarMarcas()) do cbMarca.Items.Add it[2]
+            cbMarca.SelectedIndex = 0
+
+            cbFornecedor.DropDownStyle = (dotNetClass "System.Windows.Forms.ComboBoxStyle").DropDownList
+            cbFornecedor.Items.Clear()
+            cbFornecedor.Items.Add "(Todas)"
+            for it in (apiListarFornecedores()) do cbFornecedor.Items.Add it[2]
+            cbFornecedor.SelectedIndex = 0
+
             ::pintarBotaoPesquisar btnSearch
             atualizarResumoSelecionados()
         )
@@ -2714,7 +2952,20 @@ fn abrirBuscaFerragemAPI =
         on txtNome LostFocus sender args do ( enableAccelerators = true  )
         on txtQtd  GotFocus  sender args do ( enableAccelerators = false )
         on txtQtd  LostFocus sender args do ( enableAccelerators = true  )
+        on txtValorMin GotFocus  sender args do ( enableAccelerators = false )
+        on txtValorMin LostFocus sender args do ( enableAccelerators = true  )
+        on txtValorMax GotFocus  sender args do ( enableAccelerators = false )
+        on txtValorMax LostFocus sender args do ( enableAccelerators = true  )
         on btnSearch    Click sender args do ( currentPage = 1; doSearch() )
+        on btnLimparFiltros Click sender args do
+        (
+            cbMarca.SelectedIndex = 0
+            cbFornecedor.SelectedIndex = 0
+            txtValorMin.Text = ""
+            txtValorMax.Text = ""
+            currentPage = 1
+            doSearch()
+        )
         on btnPrev      Click sender args do ( if currentPage > 1 do ( currentPage -= 1; doSearch() ) )
         on btnNext      Click sender args do ( currentPage += 1; doSearch() )
         on grid SelectionChanged sender args do updateDetail()
@@ -2890,14 +3141,13 @@ fn abrirUICustoCompleto nChapas aproveitamento fitaMetros =
         dotNetControl lbFooter      "System.Windows.Forms.Label"  pos:[318,659] width:388 height:18
         dotNetControl lbLoad        "System.Windows.Forms.Label"  pos:[318,642] width:388 height:16
 
-        local gridChapas, gridFitas
+        local gridChapas, gridFitas, gridFerragens
         local txtDesp, txtFerr, txtCola, txtFrete, txtMargemLucro, txtImposto, txtComissao
         local txtMOManual, chkMOManual, lbMOEstimada
         local lbRch, lbRft, lbRou, lbRfr, lbRmo, lbTot, lbEfetivo, lbProduto, lbMO
         local lbCMC, lbCOB
-        local lbFerragensInfo
         local btnBuscarChapa, btnAtualizar, btnBuscarFita
-        local btnAdicionarFita, btnRemoverFita, btnBuscarFerragem
+        local btnAdicionarFita, btnRemoverFita, btnBuscarFerragem, btnRemoverFerragem
         local suppressEvents = false
 
         fn dnPoint x y = dotNetObject "System.Drawing.Point" x y
@@ -3075,20 +3325,25 @@ fn abrirUICustoCompleto nChapas aproveitamento fitaMetros =
             for fe in ::G_FerragensLista do
                 totalFerr += (try (fe[3] as float) catch 0.0) * (try (fe[5] as integer) catch 1)
             if txtFerr != undefined do txtFerr.Text = money totalFerr
-            if lbFerragensInfo != undefined do
+
+            if gridFerragens != undefined do
             (
-                if ::G_FerragensLista.count == 0 then
-                    lbFerragensInfo.Text = "Nenhuma ferragem selecionada"
-                else
+                suppressEvents = true
+                gridFerragens.Rows.Clear()
+                for fe in ::G_FerragensLista do
                 (
-                    local info = ""
-                    for fe in ::G_FerragensLista do
-                    (
-                        local sub = (try (fe[3] as float) catch 0.0) * (try (fe[5] as integer) catch 1)
-                        info += fe[2] + " x" + (fe[5] as string) + " = R$" + (money sub) + "  "
-                    )
-                    lbFerragensInfo.Text = info
+                    local valor = try (fe[3] as float) catch 0.0
+                    local qtd   = try (fe[5] as integer) catch 1
+                    local sub   = valor * qtd
+                    local ri = gridFerragens.Rows.Add()
+                    local rw = gridFerragens.Rows.Item[ri]
+                    rw.Cells.Item[0].Value = fe[2]
+                    rw.Cells.Item[1].Value = fe[4]
+                    rw.Cells.Item[2].Value = valor as string
+                    rw.Cells.Item[3].Value = qtd as string
+                    rw.Cells.Item[4].Value = "R$ " + (money sub)
                 )
+                suppressEvents = false
             )
         )
 
@@ -3110,91 +3365,79 @@ fn abrirUICustoCompleto nChapas aproveitamento fitaMetros =
             local imposto  = try (parseFloatText txtImposto.Text  0.0) catch 0.0
             local comissao = try (parseFloatText txtComissao.Text 0.0) catch 0.0
 
-            -- MO: auto ou override manual
-            local moEstimado = try (::calcularMaoObra()) catch 0.0
-            local moManual   = try (chkMOManual.Checked) catch false
-            local maoObra    = if moManual then (parseFloatText txtMOManual.Text 0.0) else moEstimado
+            -- MO: auto (calculada pela API com mo_params) ou override manual
+            local moManual = try (chkMOManual.Checked) catch false
+            local maoObra  = if moManual then (parseFloatText txtMOManual.Text 0.0) else 0.0
             suppressEvents = true
-            try ( lbMOEstimada.Text = "Auto: R$ " + money moEstimado ) catch()
             try ( txtMOManual.Enabled = moManual ) catch()
             suppressEvents = false
 
-            -- ── CA_Chapas: aquisicao real = chapas inteiras consumidas pelo plano
-            -- (a sobra ja esta paga dentro da chapa inteira; sem multiplicador de desperdicio)
-            local caChapas = 0.0
+            -- Previa de preco: a API e a UNICA fonte do calculo (mesmo motor do
+            -- registro oficial da cotacao). Sem recalculo local — se a API
+            -- estiver offline, a previa fica indisponivel.
+            if not G_ApiOnline do
+            (
+                try ( lbCMC.Text  = "CMC: — (API offline)" ) catch()
+                try ( lbCOB.Text  = "COB: — (API offline)" ) catch()
+                try ( lbTot.Text  = "PRECO DE VENDA: — (API offline)" ) catch()
+                try ( lbEfetivo.Text = "CA Total: — (API offline)" ) catch()
+                return undefined
+            )
+
+            -- Monta chapasArr identico ao de finalizarCotacao (mesma entrada -> mesmo resultado)
+            local chapasArr = #()
             for i = 1 to G_ChapasGrupos.count do
             (
-                local qtd   = G_ChapasGrupos[i][2]
-                local preco = readGridPrice i
-                caChapas += qtd * preco
+                local espMm    = G_ChapasGrupos[i][1]
+                local qtd      = G_ChapasGrupos[i][2]
+                local preco    = readGridPrice i
+                local nomeProd = "Manual"
+                local entry    = getChapaEntry espMm
+                if entry != undefined do nomeProd = entry[3]
+                append chapasArr #(espMm, nomeProd, qtd, preco, (qtd * preco))
             )
 
-            -- ── CMC_Fitas: metros consumidos × preco/m ──
-            local cmcFitas = 0.0
-            for ft in ::G_FitasMultiLinhas do
-            (
-                local metros = try (ft[2] as float) catch 0.0
-                local valM   = try (ft[3] as float) catch 0.0
-                cmcFitas += metros * valM
-            )
-
-            -- ── CA_Fitas: aquisicao por rolo fechado (compra-se rolo inteiro) ──
-            local caFitas = 0.0
-            for ft in ::G_FitasMultiLinhas do
-            (
-                local metros = try (ft[2] as float) catch 0.0
-                local valM   = try (ft[3] as float) catch 0.0
-                local roloM  = try (ft[4] as float) catch 50.0
-                if roloM <= 0.0 do roloM = 50.0
-                local nRolos = ceil (metros / roloM)
-                if metros > 0.0 and nRolos < 1.0 do nRolos = 1.0
-                caFitas += nRolos * roloM * valM
-            )
-
-            -- ── CMC_Chapas: area das pecas × preco/m2 × (1 + perda real do plano) ──
-            -- Perda derivada do aproveitamento real do MAXRECTS; fallback k_perda do INI
-            local aprovReal = try (::G_CustoAprovArred as float) catch 0.0
-            local kPerda    = if aprovReal > 1.0 then (100.0 / aprovReal - 1.0) \
-                              else (try (::G_MO_KPerdaSeguranca as float) catch 0.10)
-            if kPerda < 0.0 do kPerda = 0.0
-            if kPerda > 1.0 do kPerda = 1.0
-            local cmcChapas = 0.0
-            for p in G_PiecesData do
-            (
-                local espMm  = (floor (p.esp  * 25.4 * 10 + 0.5)) / 10.0
-                local areaM2 = (p.comp * 25.4 / 1000.0) * (p.larg * 25.4 / 1000.0)
-                local valM2  = 0.0
-                for en in ::G_ApiChapaPrecos do
-                    if abs(en[1] - espMm) < 0.5 do ( valM2 = try (en[7] as float) catch 0.0; exit )
-                cmcChapas += areaM2 * valM2
-            )
-            cmcChapas *= (1.0 + kPerda)
-
-            -- ── Ferragens ──
+            -- Ferragens (total p/ payload)
             local totalFerr = 0.0
             for fe in ::G_FerragensLista do
                 totalFerr += (try (fe[3] as float) catch 0.0) * (try (fe[5] as integer) catch 1)
 
-            -- ── Totais: PV por markup divisor (margem + imposto + comissao por dentro) ──
-            local cmc  = cmcChapas + cmcFitas
-            local cob  = cmc + totalFerr + cola + frete + maoObra
-            local somaPct = margem + imposto + comissao
-            if somaPct > 95.0 do somaPct = 95.0
-            local pv   = cob / (1.0 - somaPct / 100.0)
-            -- CA = aquisicao total (chapas inteiras + rolos fechados de fita, sem MO)
-            local caTotal = caChapas + caFitas + totalFerr + cola + frete
+            local wMm = G_MainConfig[1] * 25.4
+            local hMm = G_MainConfig[2] * 25.4
+            local priceMoApi = if moManual then maoObra else 0.0
+            local resPrc = ::apiCalcularPrecificacao chapasArr wMm hMm G_PiecesData ::G_FitasMultiLinhas \
+                totalFerr cola frete priceMoApi moManual margem imposto comissao 0.0 G_CustoAprovArred
+            if not resPrc[1] do
+            (
+                try ( lbTot.Text = "PRECO DE VENDA: erro na API (" + (resPrc[2] as string) + ")" ) catch()
+                return undefined
+            )
 
-            -- ── Atualiza labels ──
+            local pr       = resPrc[2]
+            local cmc      = pr[1]
+            local cob      = pr[2]
+            local pv       = pr[3]
+            local moFinal  = pr[6]    -- MO usada pelo motor (auto via mo_params ou manual)
+            local caTotal  = pr[9]
+            local caChapas = pr[10]
+            local cmcFitas = pr[11]
+            local caFitas  = pr[12]
+
+            suppressEvents = true
+            try ( lbMOEstimada.Text = "Auto: R$ " + money (if moManual then 0.0 else moFinal) ) catch()
+            suppressEvents = false
+            if not moManual do maoObra = moFinal
+
+            -- ── Atualiza labels (valores oficiais da API) ──
             try ( lbRch.Text  = "CA Chapas (inteiras consumidas): R$ " + money caChapas ) catch()
             try ( lbRft.Text  = "Fitas consumo: R$ " + (money cmcFitas) + "  |  aquisicao (rolos): R$ " + (money caFitas) ) catch()
             try ( lbRou.Text  = "Ferragens: R$ " + money totalFerr ) catch()
             try ( lbRfr.Text  = "Cola + Frete: R$ " + money (cola + frete) ) catch()
             try ( lbRmo.Text  = "Mao de Obra: R$ " + money maoObra ) catch()
-            local kPerdaPct   = (floor (kPerda * 100 + 0.5)) as integer
             local margemInt   = (floor (margem   + 0.5)) as integer
             local impostoInt  = (floor (imposto  + 0.5)) as integer
             local comissaoInt = (floor (comissao + 0.5)) as integer
-            try ( lbCMC.Text  = "CMC (mat. consumido c/ " + (kPerdaPct as string) + "% perda real): R$ " + money cmc ) catch()
+            try ( lbCMC.Text  = "CMC (mat. consumido c/ perda real): R$ " + money cmc ) catch()
             try ( lbCOB.Text  = "COB (custo operacional base): R$ " + money cob ) catch()
             try ( lbMO.Text   = "Margem " + (margemInt as string) + "% + Imposto " + (impostoInt as string) + "% + Comissao " + (comissaoInt as string) + "% (por dentro do preco)" ) catch()
             try ( lbTot.Text  = "PRECO DE VENDA: R$ " + money pv ) catch()
@@ -3344,6 +3587,47 @@ fn abrirUICustoCompleto nChapas aproveitamento fitaMetros =
             ::abrirBuscaFerragemAPI()
         )
 
+        fn onRemoverFerragem sender args =
+        (
+            if ::G_FerragensLista.count == 0 do return undefined
+            local rowIdx = 1
+            try ( if gridFerragens.SelectedRows.Count > 0 do rowIdx = gridFerragens.SelectedRows.Item[0].Index + 1 ) catch()
+            if rowIdx < 1 or rowIdx > ::G_FerragensLista.count do return undefined
+            local novaLista = #()
+            for i = 1 to ::G_FerragensLista.count do
+                if i != rowIdx do append novaLista ::G_FerragensLista[i]
+            ::G_FerragensLista = novaLista
+            refreshFerragensInfo()
+            recalcular()
+        )
+
+        fn onFerragensGridChanged sender args =
+        (
+            if suppressEvents do return undefined
+            local editRow = -1; local editCol = -1
+            try ( editRow = args.RowIndex; editCol = args.ColumnIndex ) catch()
+            if editRow < 0 or (editCol != 2 and editCol != 3) do return undefined
+            if (editRow + 1) > ::G_FerragensLista.count do return undefined
+
+            suppressEvents = true
+            local fe = ::G_FerragensLista[editRow + 1]
+            local valor = parseFloatText (gridFerragens.Rows.Item[editRow].Cells.Item[2].Value) (try (fe[3] as float) catch 0.0)
+            local qtd   = parseFloatText (gridFerragens.Rows.Item[editRow].Cells.Item[3].Value) (try (fe[5] as integer) catch 1)
+            if qtd < 1 do qtd = 1
+            ::G_FerragensLista[editRow + 1] = #(fe[1], fe[2], valor, fe[4], qtd as integer)
+            local sub = valor * qtd
+            gridFerragens.Rows.Item[editRow].Cells.Item[2].Value = valor as string
+            gridFerragens.Rows.Item[editRow].Cells.Item[3].Value = qtd as string
+            gridFerragens.Rows.Item[editRow].Cells.Item[4].Value = "R$ " + (money sub)
+            suppressEvents = false
+
+            local totalFerr = 0.0
+            for f in ::G_FerragensLista do
+                totalFerr += (try (f[3] as float) catch 0.0) * (try (f[5] as integer) catch 1)
+            if txtFerr != undefined do txtFerr.Text = money totalFerr
+            recalcular()
+        )
+
         fn onAtualizar sender args = refreshFromApi()
         fn onTextChanged sender args = recalcular()
         fn onGridChanged sender args = recalcular()
@@ -3419,8 +3703,9 @@ fn abrirUICustoCompleto nChapas aproveitamento fitaMetros =
                 local aprovReal  = try (::G_CustoAprovArred as float) catch 0.0
                 local kPerda     = if aprovReal > 1.0 then (100.0 / aprovReal - 1.0) \
                                    else (try (::G_MO_KPerdaSeguranca as float) catch 0.10)
+                -- Limite oficial unificado com a API (pricing_service.py): cap 2.0
                 if kPerda < 0.0 do kPerda = 0.0
-                if kPerda > 1.0 do kPerda = 1.0
+                if kPerda > 2.0 do kPerda = 2.0
                 local custoUnit  = areaM2 * valorM2 * (1.0 + kPerda)
                 local custoTotal = custoUnit * g[9]
                 -- Metros de fita por peca
@@ -3487,84 +3772,54 @@ fn abrirUICustoCompleto nChapas aproveitamento fitaMetros =
                 caChapas += sub
             )
 
-            -- ── CMC_Fitas: metros consumidos × preco/m  +  CA_Fitas: rolos fechados ──
+            -- ── Fitas: monta fitasArr (nome, metros, valor_m, subtotal consumo) ──
             local fitasArr  = #()
-            local cmcFitas  = 0.0
-            local caFitas   = 0.0
             for ft in ::G_FitasMultiLinhas do
             (
                 local metros = try (ft[2] as float) catch 0.0
                 local valM   = try (ft[3] as float) catch 0.0
-                local roloM  = try (ft[4] as float) catch 50.0
-                if roloM <= 0.0 do roloM = 50.0
                 local sub    = metros * valM
                 append fitasArr #(ft[1], metros, valM, sub)
-                cmcFitas += sub
-                local nRolos = ceil (metros / roloM)
-                if metros > 0.0 and nRolos < 1.0 do nRolos = 1.0
-                caFitas += nRolos * roloM * valM
             )
-
-            -- ── CMC_Chapas: area × preco/m2 × (1 + perda real do plano) ──
-            local aprovReal = try (::G_CustoAprovArred as float) catch 0.0
-            local kPerda    = if aprovReal > 1.0 then (100.0 / aprovReal - 1.0) \
-                              else (try (::G_MO_KPerdaSeguranca as float) catch 0.10)
-            if kPerda < 0.0 do kPerda = 0.0
-            if kPerda > 1.0 do kPerda = 1.0
-            local cmcChapas = 0.0
-            for p in G_PiecesData do
-            (
-                local espMm  = (floor (p.esp  * 25.4 * 10 + 0.5)) / 10.0
-                local areaM2 = (p.comp * 25.4 / 1000.0) * (p.larg * 25.4 / 1000.0)
-                local valM2  = 0.0
-                for en in ::G_ApiChapaPrecos do
-                    if abs(en[1] - espMm) < 0.5 do ( valM2 = try (en[7] as float) catch 0.0; exit )
-                cmcChapas += areaM2 * valM2
-            )
-            cmcChapas *= (1.0 + kPerda)
 
             -- ── Ferragens (custo real pelas unidades selecionadas) ──
             local totalFerr = 0.0
             for fe in ::G_FerragensLista do
                 totalFerr += (try (fe[3] as float) catch 0.0) * (try (fe[5] as integer) catch 1)
 
-            -- ── Totais: PV por markup divisor (margem + imposto + comissao por dentro) ──
-            local cmc  = cmcChapas + cmcFitas
-            local cob  = cmc + totalFerr + cola + frete + maoObra
-            local somaPct = margem + imposto + comissao
-            if somaPct > 95.0 do somaPct = 95.0
-            local pv      = cob / (1.0 - somaPct / 100.0)
-            local pvFinal = pv * (1.0 - desconto / 100.0)
-
-            -- CA Total para referencia interna (aquisicao sem MO)
-            local caTotal  = caChapas + caFitas + totalFerr + cola + frete
-
-            -- ── API como fonte oficial do calculo monetario (v10) ──
-            -- Recalcula CMC/COB/PV/PV-final via pricing_service; em caso de
-            -- falha/offline mantem os valores calculados localmente acima.
-            if G_ApiOnline do
+            -- ── API e a fonte oficial do calculo monetario (v10) ──
+            -- Sem fallback local: se a API estiver offline ou a chamada falhar,
+            -- avisa o usuario e aborta o registro da cotacao.
+            if not G_ApiOnline do
             (
-                local wMm = G_MainConfig[1] * 25.4
-                local hMm = G_MainConfig[2] * 25.4
-                local priceMoApi  = if moManualFinal then maoObra else 0.0
-                local resPrc = ::apiCalcularPrecificacao chapasArr wMm hMm G_PiecesData ::G_FitasMultiLinhas \
-                    totalFerr cola frete priceMoApi moManualFinal margem imposto comissao desconto G_CustoAprovArred
-                if resPrc[1] then
-                (
-                    local pr = resPrc[2]
-                    cmc      = pr[1]
-                    cob      = pr[2]
-                    pv       = pr[3]
-                    pvFinal  = pr[4]
-                    maoObra  = pr[6]
-                    cmcFitas = pr[11]
-                    caFitas  = pr[12]
-                    caTotal  = pr[9]
-                    for w in pr[14] do ::apiAppendLog "maxscript_api_errors.log" ("Precificacao: " + w)
-                )
-                else
-                    ::apiAppendLog "maxscript_api_errors.log" ("apiCalcularPrecificacao falhou, usando calculo local: " + resPrc[2])
+                hideLoading()
+                messageBox "API offline: nao e possivel calcular a precificacao da cotacao." title:"Erro Precificacao"
+                return undefined
             )
+
+            local wMm = G_MainConfig[1] * 25.4
+            local hMm = G_MainConfig[2] * 25.4
+            local priceMoApi = if moManualFinal then maoObra else 0.0
+            local resPrc = ::apiCalcularPrecificacao chapasArr wMm hMm G_PiecesData ::G_FitasMultiLinhas \
+                totalFerr cola frete priceMoApi moManualFinal margem imposto comissao desconto G_CustoAprovArred
+            if not resPrc[1] do
+            (
+                hideLoading()
+                messageBox ("Erro ao calcular precificacao na API:\n" + resPrc[2]) title:"Erro Precificacao"
+                return undefined
+            )
+
+            local pr = resPrc[2]
+            local cmc       = pr[1]
+            local cob       = pr[2]
+            local pv        = pr[3]
+            local pvFinal   = pr[4]
+            maoObra          = pr[6]
+            local cmcChapas = pr[10]
+            local cmcFitas  = pr[11]
+            local caFitas   = pr[12]
+            local caTotal   = pr[9]
+            for w in pr[14] do ::apiAppendLog "maxscript_api_errors.log" ("Precificacao: " + w)
 
             -- Trava de margem minima: desconto nao pode levar o preco abaixo do custo
             if pvFinal < cob do
@@ -3604,30 +3859,27 @@ fn abrirUICustoCompleto nChapas aproveitamento fitaMetros =
             catch ( ::apiAppendLog "maxscript_api_errors.log" ("buildPecasJson: " + (getCurrentException())) )
 
             showLoading lbl:"Registrando cotacao..."
-            if G_ApiOnline then
+            local res = ::apiCriarCotacao chapasArr fitasArr outrosArr desp G_CustoAprovArred \
+                caChapas cmcFitas totalOut pvFinal \
+                clienteId:cliId nomeProjeto:nomeProjeto \
+                previsaoEntrega:previsao descontoGlobal:desconto obsGeral:obsGeral \
+                custoEfetivoChapas:caChapas custoEfetivoFitas:caFitas \
+                custoEfetivoOutros:(totalFerr + cola + frete) custoEfetivoGeral:caTotal \
+                custoProductoChapas:cmcChapas custoProductoFitas:cmcFitas \
+                custoProductoOutros:(totalFerr + frete) custoProductoGeral:cmc \
+                ferragensLista:ferragensParam pecasJson:pecasJsonStr \
+                maoObra:maoObra moManual:moManualFinal \
+                custoAquisicaoTotal:caTotal custoMaterialConsumido:cmc \
+                custoOperacionalBase:cob margemLucroPct:margem precoVendaFinal:pvFinal \
+                impostoPct:imposto comissaoPct:comissao
+            if res[1] then
             (
-                local res = ::apiCriarCotacao chapasArr fitasArr outrosArr desp G_CustoAprovArred \
-                    caChapas cmcFitas totalOut pvFinal \
-                    clienteId:cliId nomeProjeto:nomeProjeto \
-                    previsaoEntrega:previsao descontoGlobal:desconto obsGeral:obsGeral \
-                    custoEfetivoChapas:caChapas custoEfetivoFitas:caFitas \
-                    custoEfetivoOutros:(totalFerr + cola + frete) custoEfetivoGeral:caTotal \
-                    custoProductoChapas:cmcChapas custoProductoFitas:cmcFitas \
-                    custoProductoOutros:(totalFerr + frete) custoProductoGeral:cmc \
-                    ferragensLista:ferragensParam pecasJson:pecasJsonStr \
-                    maoObra:maoObra moManual:moManualFinal \
-                    custoAquisicaoTotal:caTotal custoMaterialConsumido:cmc \
-                    custoOperacionalBase:cob margemLucroPct:margem precoVendaFinal:pvFinal \
-                    impostoPct:imposto comissaoPct:comissao
-                if res[1] then
-                (
-                    cotId = res[2]
-                    messageBox res[3] title:"Cotacao Criada"
-                )
-                else
-                (
-                    messageBox ("Aviso API: " + res[3] + "\nPlanilha sera gerada sem registro no banco.") title:"Aviso"
-                )
+                cotId = res[2]
+                messageBox res[3] title:"Cotacao Criada"
+            )
+            else
+            (
+                messageBox ("Aviso API: " + res[3] + "\nPlanilha sera gerada sem registro no banco.") title:"Aviso"
             )
 
             hideLoading()
@@ -3700,46 +3952,73 @@ fn abrirUICustoCompleto nChapas aproveitamento fitaMetros =
             btnRemoverFita   = addButton grpCustos "- Remover"          310 232 110 28
 
             -- ── Outros Custos ──
-            local grpOutros = addGroup pnl "Outros Custos" 566 354 388 366
+            local grpOutros = addGroup pnl "Outros Custos" 566 354 388 456
             addLabel grpOutros "Ferragem (R$)"             14 28  120 18
             txtFerr = addText grpOutros "0.0"              140 24  90  24
+            txtFerr.Enabled = false
             btnBuscarFerragem = addButton grpOutros "Buscar Ferragem na API" 240 24 138 24
-            lbFerragensInfo = addLabel grpOutros "Nenhuma ferragem selecionada" 14 56 366 28
-            addLabel grpOutros "Cola (R$)"                 14 92  120 18
-            txtCola = addText grpOutros "0.0"              140 88  90  24
+
+            -- Grid de ferragens selecionadas
+            addLabel grpOutros "Ferragens selecionadas — edite Valor e Qtd diretamente na grade:" 14 54 366 18
+            gridFerragens = dotNetObject "System.Windows.Forms.DataGridView"
+            gridFerragens.Location = dnPoint 14 74
+            gridFerragens.Size = dnSize 360 90
+            gridFerragens.AllowUserToAddRows    = false
+            gridFerragens.AllowUserToDeleteRows = false
+            gridFerragens.RowHeadersVisible     = false
+            gridFerragens.MultiSelect           = false
+            gridFerragens.SelectionMode = (dotNetClass "System.Windows.Forms.DataGridViewSelectionMode").FullRowSelect
+            gridFerragens.EditMode = (dotNetClass "System.Windows.Forms.DataGridViewEditMode").EditOnEnter
+            local hc0 = dotNetObject "System.Windows.Forms.DataGridViewTextBoxColumn"
+            hc0.Name = "nome"; hc0.HeaderText = "Ferragem"; hc0.Width = 130; hc0.ReadOnly = true
+            local hc1 = dotNetObject "System.Windows.Forms.DataGridViewTextBoxColumn"
+            hc1.Name = "fornecedor"; hc1.HeaderText = "Fornecedor"; hc1.Width = 70; hc1.ReadOnly = true
+            local hc2 = dotNetObject "System.Windows.Forms.DataGridViewTextBoxColumn"
+            hc2.Name = "valor"; hc2.HeaderText = "R$/un"; hc2.Width = 60; hc2.ReadOnly = false
+            local hc3 = dotNetObject "System.Windows.Forms.DataGridViewTextBoxColumn"
+            hc3.Name = "qtd"; hc3.HeaderText = "Qtd"; hc3.Width = 40; hc3.ReadOnly = false
+            local hc4 = dotNetObject "System.Windows.Forms.DataGridViewTextBoxColumn"
+            hc4.Name = "sub"; hc4.HeaderText = "Subtotal"; hc4.Width = 60; hc4.ReadOnly = true
+            gridFerragens.Columns.Add hc0; gridFerragens.Columns.Add hc1
+            gridFerragens.Columns.Add hc2; gridFerragens.Columns.Add hc3; gridFerragens.Columns.Add hc4
+            grpOutros.Controls.Add gridFerragens
+            btnRemoverFerragem = addButton grpOutros "- Remover" 14 168 110 28
+
+            addLabel grpOutros "Cola (R$)"                 14 202 120 18
+            txtCola = addText grpOutros "0.0"              140 198 90  24
 
             -- Mao de Obra: auto-calculada, com opcao de override manual
-            addLabel grpOutros "Mao de Obra"               14 120 130 18
-            lbMOEstimada = addLabel grpOutros "Auto: R$ 0.00" 150 120 220 18
+            addLabel grpOutros "Mao de Obra"               14 230 130 18
+            lbMOEstimada = addLabel grpOutros "Auto: R$ 0.00" 150 230 220 18
             local chkColor = dotNetClass "System.Drawing.Color"
             try ( lbMOEstimada.ForeColor = chkColor.FromArgb 80 120 80 ) catch()
 
             -- Checkbox para override manual
             chkMOManual = dotNetObject "System.Windows.Forms.CheckBox"
             chkMOManual.Text = "Substituir por valor manual"
-            chkMOManual.Location = (dnPoint 14 144)
+            chkMOManual.Location = (dnPoint 14 254)
             chkMOManual.Size = (dnSize 250 20)
             chkMOManual.Checked = false
             grpOutros.Controls.Add chkMOManual
 
             -- Campo de override (inicia desabilitado)
-            txtMOManual = addText grpOutros "0.0"          270 142 100 24
+            txtMOManual = addText grpOutros "0.0"          270 252 100 24
             txtMOManual.Enabled = false
 
-            addLabel grpOutros "Transporte / Frete (R$)"   14 192 150 18
-            txtFrete = addText grpOutros "0.0"             172 188 90  24
+            addLabel grpOutros "Transporte / Frete (R$)"   14 302 150 18
+            txtFrete = addText grpOutros "0.0"             172 298 90  24
 
-            addLabel grpOutros "Margem de Lucro (%)"       14 224 150 18
-            txtMargemLucro = addText grpOutros "30.0"      172 220 90  24
+            addLabel grpOutros "Margem de Lucro (%)"       14 334 150 18
+            txtMargemLucro = addText grpOutros "30.0"      172 330 90  24
 
-            addLabel grpOutros "Imposto (%)"               14 256 150 18
-            txtImposto = addText grpOutros "0.0"           172 252 90  24
+            addLabel grpOutros "Imposto (%)"               14 366 150 18
+            txtImposto = addText grpOutros "0.0"           172 362 90  24
 
-            addLabel grpOutros "Comissao (%)"              14 288 150 18
-            txtComissao = addText grpOutros "0.0"          172 284 90  24
+            addLabel grpOutros "Comissao (%)"              14 398 150 18
+            txtComissao = addText grpOutros "0.0"          172 394 90  24
 
             -- ── Resultado (modelo CMC + Markup) ──
-            local grpResultado = addGroup pnl "Resultado" 8 728 946 148
+            local grpResultado = addGroup pnl "Resultado" 8 818 946 148
             -- Coluna esquerda: decomposicao de insumos
             lbRch  = addLabel grpResultado "CA Chapas (c/ desp.): R$ --"  8  16 380 18
             lbRft  = addLabel grpResultado "CMC Fitas: R$ --"             8  36 380 18
@@ -3781,8 +4060,10 @@ fn abrirUICustoCompleto nChapas aproveitamento fitaMetros =
             dotNet.addEventHandler btnAdicionarFita  "Click"            onAdicionarFita
             dotNet.addEventHandler btnRemoverFita    "Click"            onRemoverFita
             dotNet.addEventHandler btnBuscarFerragem "Click"            onBuscarFerragem
+            dotNet.addEventHandler btnRemoverFerragem "Click"           onRemoverFerragem
             dotNet.addEventHandler gridChapas        "CellValueChanged" onGridChanged
             dotNet.addEventHandler gridFitas         "CellValueChanged" onFitasGridChanged
+            dotNet.addEventHandler gridFerragens     "CellValueChanged" onFerragensGridChanged
             for tb in #(txtDesp, txtFerr, txtCola, txtFrete, txtMOManual, txtMargemLucro, txtImposto, txtComissao) do
             (
                 dotNet.addEventHandler tb "TextChanged" onTextChanged
@@ -3805,7 +4086,7 @@ fn abrirUICustoCompleto nChapas aproveitamento fitaMetros =
             lbFooter.Text     = "Selecione uma linha de chapa para buscar preco. Edite Metros/R$/m na grade de fitas."
             lbLoad.Visible    = false
             pnl.AutoScroll = true
-            pnl.AutoScrollMinSize = dnSize 946 884
+            pnl.AutoScrollMinSize = dnSize 946 974
             buildUi()
             try ( ::aplicarTemaForm lbLoad.FindForm() ) catch()
             ::pintarBotaoProximo btnCriarCot
@@ -3817,7 +4098,7 @@ fn abrirUICustoCompleto nChapas aproveitamento fitaMetros =
         )
 
         on btnCriarCot  Click sender args do iniciarCotacao()
-        on btnCotacoes  Click sender args do ( destroyDialog rlCusto; ::abrirCotacoes() )
+        on btnCotacoes  Click sender args do ( ::abrirCotacoes() )
         on btnClose     Click sender args do destroyDialog rlCusto
     )
 
@@ -4110,8 +4391,9 @@ fn abrirUIPrincipal =
         dotNetControl btnCancel "System.Windows.Forms.Button" pos:[10,480]  width:120 height:34
         dotNetControl lbFooter  "System.Windows.Forms.Label"  pos:[145,489] width:365 height:18
 
-        local pageProjeto, pageCorte, pageStatus, pageMaoObra
+        local pageProjeto, pageCorte, pageStatus, pageMaoObra, pageConfigGerais
         local cmbChapa, txtW, txtD, txtGap, txtBorda, cmbAlign, cmbGroup, chkDWG, lblApi
+        local cfgRows = #(), cfgLbStatus
         local txtMOBase, txtMOKPeca, txtMOKCorte, txtMOKFita, txtMOKFerr, txtMOKPeso, txtMODens, txtMOKPerda
 
         fn dnPoint x y = dotNetObject "System.Drawing.Point" x y
@@ -4223,12 +4505,14 @@ fn abrirUIPrincipal =
             try ( tabs.BackColor = Color.FromArgb 245 246 248 ) catch()
             try ( tabs.ForeColor = Color.FromArgb 27 32 38 ) catch()
 
-            for p = 0 to tabs.TabPages.Count - 1 do
-            (
-                local pg = tabs.TabPages.Item[p]
-                try ( pg.BackColor = Color.FromArgb 245 246 248 ) catch()
-                try ( pg.ForeColor = Color.FromArgb 27 32 38 ) catch()
-            )
+            try (
+                for p = 0 to tabs.TabPages.Count - 1 do
+                (
+                    local pg = tabs.TabPages.Item[p]
+                    try ( pg.BackColor = Color.FromArgb 245 246 248 ) catch()
+                    try ( pg.ForeColor = Color.FromArgb 27 32 38 ) catch()
+                )
+            ) catch()
 
             try ( cmbChapa.BackColor = Color.White ) catch()
             try ( cmbChapa.ForeColor = Color.FromArgb 27 32 38 ) catch()
@@ -4236,8 +4520,8 @@ fn abrirUIPrincipal =
             try ( cmbChapa.DropDownStyle = (dotNetClass "System.Windows.Forms.ComboBoxStyle").DropDown ) catch()
             try ( if cmbChapa.SelectedIndex >= 0 do cmbChapa.Text = cmbChapa.Items.Item[cmbChapa.SelectedIndex] ) catch()
 
-            styleMainButton btnAvan (Color.FromArgb 46 139 87) (Color.FromArgb 36 119 73) (Color.FromArgb 26 99 60)
-            ::pintarBotaoProximo btnAvan
+            try ( styleMainButton btnAvan (Color.FromArgb 46 139 87) (Color.FromArgb 36 119 73) (Color.FromArgb 26 99 60) ) catch()
+            try ( ::pintarBotaoProximo btnAvan ) catch()
         )
 
         fn onChapaChanged sender args =
@@ -4457,6 +4741,91 @@ fn abrirUIPrincipal =
             pageMaoObra.Controls.Add lbNote
         )
 
+        fn onSalvarConfigGerais sender args =
+        (
+            local chave, tb
+            for row in cfgRows do
+                if row[1] == sender do ( chave = row[2]; tb = row[3] )
+            if chave == undefined or cfgLbStatus == undefined do return undefined
+
+            local raw = substituteString tb.Text "," "."
+            local v = 0.0
+            try ( v = raw as float ) catch ( v = undefined )
+            if v == undefined then
+                cfgLbStatus.Text = "Valor invalido para '" + chave + "'."
+            else if ::apiAtualizarConfiguracao chave v then
+                cfgLbStatus.Text = "Configuracao '" + chave + "' salva com sucesso."
+            else
+                cfgLbStatus.Text = "Erro ao salvar '" + chave + "'."
+        )
+
+        fn buildConfigGerais =
+        (
+            pageConfigGerais = dotNetObject "System.Windows.Forms.TabPage" "Configuracoes Gerais"
+            tabs.TabPages.Add pageConfigGerais
+
+            fn addBtn parent text x y w h =
+            (
+                local c = dotNetObject "System.Windows.Forms.Button"
+                c.Text = text
+                c.Location = dnPoint x y
+                c.Size = dnSize w h
+                parent.Controls.Add c
+                c
+            )
+
+            local lbInfo = addLabel pageConfigGerais \
+                "Custos fixos parametrizaveis (persistidos no banco), para diluicao futura nos calculos:" 18 16 700 20
+            pageConfigGerais.Controls.Add lbInfo
+
+            if not G_ApiOnline then
+            (
+                local lbOff = addLabel pageConfigGerais \
+                    "API offline: configuracoes gerais indisponiveis. Conecte-se a API para visualizar/editar." 18 50 700 40
+                try ( lbOff.ForeColor = (dotNetClass "System.Drawing.Color").FromArgb 180 60 60 ) catch()
+                pageConfigGerais.Controls.Add lbOff
+                return undefined
+            )
+
+            local cfgs = ::apiListarConfiguracoes()
+            if cfgs.count == 0 do
+            (
+                local lbVazio = addLabel pageConfigGerais "Nenhuma configuracao encontrada." 18 50 700 24
+                pageConfigGerais.Controls.Add lbVazio
+                return undefined
+            )
+
+            local lbStatus = addLabel pageConfigGerais "" 18 16 700 20
+            lbStatus.Location = dnPoint 360 16
+            pageConfigGerais.Controls.Add lbStatus
+            cfgLbStatus = lbStatus
+            cfgRows = #()
+
+            local y = 50
+            for cfg in cfgs do
+            (
+                local chave     = cfg[1]
+                local descricao = cfg[2]
+                local valor     = cfg[3]
+                local unidade   = cfg[4]
+
+                local rotulo = if descricao != "" then descricao else chave
+                if unidade != "" do rotulo += " (" + unidade + ")"
+                local l1 = addLabel pageConfigGerais rotulo 18 (y+2) 380 18
+                pageConfigGerais.Controls.Add l1
+
+                local tb = addText pageConfigGerais (substituteString (valor as string) "," ".") 410 y 100 24
+                dotNet.addEventHandler tb "GotFocus"  onFocusIn
+                dotNet.addEventHandler tb "LostFocus" onFocusOut
+
+                local btnSalvar = addBtn pageConfigGerais "Salvar" 520 y 90 24
+                append cfgRows #(btnSalvar, chave, tb)
+                dotNet.addEventHandler btnSalvar "Click" onSalvarConfigGerais
+
+                y += 34
+            )
+        )
+
         fn buildStatus =
         (
             pageStatus = dotNetObject "System.Windows.Forms.TabPage" "Status"
@@ -4475,6 +4844,7 @@ fn abrirUIPrincipal =
             buildCorte()
             buildMaoObra()
             buildStatus()
+            try ( buildConfigGerais() ) catch ( messageBox ("Erro ao montar 'Configuracoes Gerais': " + (getCurrentException())) title:"Aviso" )
             btnAvan.Text    = "Avancar para Fitas"
             btnCancel.Text  = "Ver Cotacoes"
             lbFooter.Text   = if G_ApiOnline then "API online: busca de precos habilitada" else "API offline: precos manuais"
@@ -4741,7 +5111,7 @@ rollout rlDadosCliente "Cotacao — Cliente e Projeto" width:520 height:456
 
     dotNetControl lbEntrega      "System.Windows.Forms.Label"  pos:[12,212]  width:220 height:16
     dotNetControl lbDesconto     "System.Windows.Forms.Label"  pos:[248,212] width:160 height:16
-    dotNetControl txtEntrega     "System.Windows.Forms.TextBox" pos:[12,230]  width:200 height:26
+    dotNetControl txtEntrega     "System.Windows.Forms.DateTimePicker" pos:[12,230]  width:200 height:26
     dotNetControl txtDesconto    "System.Windows.Forms.TextBox" pos:[248,230] width:80  height:26
 
     dotNetControl lbObs          "System.Windows.Forms.Label"  pos:[12,268] width:496 height:16
@@ -4802,7 +5172,9 @@ rollout rlDadosCliente "Cotacao — Cliente e Projeto" width:520 height:456
         txtObs.Multiline  = true
         txtObs.ScrollBars = (dotNetClass "System.Windows.Forms.ScrollBars").Vertical
         txtDesconto.Text  = "0"
-        txtEntrega.Text   = ""
+        txtEntrega.Format = (dotNetClass "System.Windows.Forms.DateTimePickerFormat").Short
+        txtEntrega.ShowCheckBox = true
+        txtEntrega.Checked = false
 
         -- Destaca botao confirmar
         local corOK = (dotNetClass "System.Drawing.Color").FromArgb 46 139 87
@@ -4840,11 +5212,12 @@ rollout rlDadosCliente "Cotacao — Cliente e Projeto" width:520 height:456
             lbValidacao.Text = "Desconto deve ser entre 0 e 100 (ex: 10 para 10%)."
             return undefined
         )
+        local previsaoEntregaTxt = try (if txtEntrega.Checked then txtEntrega.Value.ToString "yyyy-MM-dd" else "") catch ""
         ::G_DadosCotacaoCliente = #(
             ::G_ClienteSelecionadoId,
             txtProjeto.Text,
             txtObs.Text,
-            txtEntrega.Text,
+            previsaoEntregaTxt,
             desconto
         )
         destroyDialog rlDadosCliente
@@ -4859,8 +5232,6 @@ rollout rlDadosCliente "Cotacao — Cliente e Projeto" width:520 height:456
 
     on txtProjeto  GotFocus sender args do ( enableAccelerators = false )
     on txtProjeto  LostFocus sender args do ( enableAccelerators = true  )
-    on txtEntrega  GotFocus sender args do ( enableAccelerators = false )
-    on txtEntrega  LostFocus sender args do ( enableAccelerators = true  )
     on txtDesconto GotFocus sender args do ( enableAccelerators = false )
     on txtDesconto LostFocus sender args do ( enableAccelerators = true  )
     on txtObs      GotFocus sender args do ( enableAccelerators = false )
@@ -4995,8 +5366,6 @@ fn abrirCotacoes =
         dotNetControl pnlLeft      "System.Windows.Forms.Panel"      pos:[8,8]    width:380 height:630
         -- Area direita: abas de conteudo (largura = 1100-8-380-8-8 = 696px)
         dotNetControl tabCtrl      "System.Windows.Forms.TabControl" pos:[396,8]  width:696 height:630
-        -- Loading overlay: cobre ambas as colunas durante chamadas API
-        dotNetControl pnlLoad      "System.Windows.Forms.Panel"      pos:[8,8]    width:1084 height:630
         -- Rodape
         dotNetControl btnVoltar        "System.Windows.Forms.Button"  pos:[8,650]   width:130 height:26
         dotNetControl btnExportPDF     "System.Windows.Forms.Button"  pos:[148,650] width:170 height:26
@@ -5111,21 +5480,61 @@ fn abrirCotacoes =
         )
         fn fmtPct v = ((floor(v * 10 + 0.5)) / 10.0) as string + "%"
 
-        -- ── Loading: spinner no rodape + botoes desabilitados ──
+        -- ── Loading: SEM overlay sobreposto. O 3ds Max nao processa o pump de
+        -- paint do WinForms de forma confiavel, entao qualquer painel que cubra
+        -- a tela deixa artefatos ("fantasmas") ao ser escondido. O padrao
+        -- robusto aqui e nao cobrir nada: rodape destacado + cursor de espera
+        -- + controles desabilitados (que ja dao o feedback de "ocupado").
         fn showLoad =
         (
-            try ( lbRodape.Text = "⏳  Consultando API, aguarde..." ) catch()
-            try ( btnPesquisar.Enabled  = false ) catch()
-            try ( btnVoltar.Enabled     = false ) catch()
-            try ( btnExportPDF.Enabled  = false ) catch()
+            try
+            (
+                lbRodape.Text = "⏳  Consultando API, aguarde..."
+                lbRodape.Font = dotNetObject "System.Drawing.Font" "Segoe UI" 10.0 \
+                    ((dotNetClass "System.Drawing.FontStyle").Bold)
+                lbRodape.ForeColor = (dotNetClass "System.Drawing.Color").FromArgb 140 84 16
+                lbRodape.BackColor = (dotNetClass "System.Drawing.Color").FromArgb 253 235 200
+            ) catch()
+            try
+            (
+                local _frm = lbRodape.FindForm()
+                if _frm != undefined do _frm.Cursor = (dotNetClass "System.Windows.Forms.Cursors").WaitCursor
+            ) catch()
+            try ( btnPesquisar.Enabled       = false ) catch()
+            try ( btnVoltar.Enabled          = false ) catch()
+            try ( btnExportPDF.Enabled       = false ) catch()
+            try ( btnExportProposta.Enabled  = false ) catch()
+            try ( btnSelectCli.Enabled       = false ) catch()
+            try ( btnLimparCli.Enabled       = false ) catch()
+            try ( btnSalvarEdit.Enabled      = false ) catch()
+            try ( gridCotacoes.Enabled       = false ) catch()
+            try ( lbRodape.Refresh() ) catch()
             windows.processPostedMessages()
         )
         fn hideLoad =
         (
-            try ( lbRodape.Text = "" ) catch()
-            try ( btnPesquisar.Enabled  = true ) catch()
-            try ( btnVoltar.Enabled     = true ) catch()
-            try ( btnExportPDF.Enabled  = true ) catch()
+            try
+            (
+                lbRodape.Text = ""
+                lbRodape.Font = dotNetObject "System.Drawing.Font" "Segoe UI" 9.0
+                lbRodape.BackColor = (dotNetClass "System.Drawing.Color").FromArgb 245 246 248
+                lbRodape.ForeColor = (dotNetClass "System.Drawing.Color").FromArgb 27 32 38
+            ) catch()
+            try
+            (
+                local _frm = lbRodape.FindForm()
+                if _frm != undefined do _frm.Cursor = (dotNetClass "System.Windows.Forms.Cursors").Default
+            ) catch()
+            try ( btnPesquisar.Enabled       = true ) catch()
+            try ( btnVoltar.Enabled          = true ) catch()
+            try ( btnExportPDF.Enabled       = true ) catch()
+            try ( btnExportProposta.Enabled  = true ) catch()
+            try ( btnSelectCli.Enabled       = true ) catch()
+            try ( btnLimparCli.Enabled       = true ) catch()
+            try ( btnSalvarEdit.Enabled      = true ) catch()
+            try ( gridCotacoes.Enabled       = true ) catch()
+            try ( lbRodape.Refresh() ) catch()
+            windows.processPostedMessages()
         )
 
         -- ── Limpa painel direito ──
@@ -5157,7 +5566,7 @@ fn abrirCotacoes =
             try ( lbPecasTotalM2.Text = "Total M² consumido: 0.0000 m²" ) catch()
             try ( lbPecasSalvStatus.Text = "" ) catch()
             try ( txtEditProj.Text    = "" ) catch()
-            try ( txtEditEntrega.Text = "" ) catch()
+            try ( txtEditEntrega.Checked = false ) catch()
             try ( txtEditObs.Text     = "" ) catch()
             try ( txtEditDesc.Text    = "0" ) catch()
             try ( lbSalvoStatus.Text  = "" ) catch()
@@ -5530,7 +5939,13 @@ fn abrirCotacoes =
             local desc    = if cot.count >= 4  then cot[4]  else 0.0
             local obs     = if cot.count >= 9  then cot[9]  else ""
             try ( txtEditProj.Text    = if proj    != undefined then proj    else "" ) catch()
-            try ( txtEditEntrega.Text = if entrega != undefined then entrega else "" ) catch()
+            try
+            (
+                local dtEntrega = (dotNetClass "System.DateTime").Parse entrega
+                txtEditEntrega.Value   = dtEntrega
+                txtEditEntrega.Checked = true
+            )
+            catch ( txtEditEntrega.Checked = false )
             try ( txtEditObs.Text     = if obs     != undefined then obs     else "" ) catch()
             try ( txtEditDesc.Text    = desc as string ) catch()
             try ( lbSalvoStatus.Text  = "" ) catch()
@@ -5684,7 +6099,7 @@ fn abrirCotacoes =
             showLoad()
 
             local proj    = try ( txtEditProj.Text    ) catch ""
-            local entrega = try ( txtEditEntrega.Text ) catch ""
+            local entrega = try ( if txtEditEntrega.Checked then txtEditEntrega.Value.ToString "yyyy-MM-dd" else "" ) catch ""
             local obs     = try ( txtEditObs.Text     ) catch ""
             local cola    = try ( txtEditCola.Text  as float ) catch 0.0
             local maoObra = try ( txtEditMO.Text    as float ) catch 0.0
@@ -5797,14 +6212,21 @@ fn abrirCotacoes =
             local comissaoPctEd = if cotCarregada != undefined and cotCarregada.count >= 28 \
                                   then (try (cotCarregada[28] as float) catch 0.0) else 0.0
 
-            -- CMC = chapas consumidas (imutavel) + fitas novas
-            local newCmc = cpChapas + ccEfFitas
-            -- COB = CMC + ferragens + cola + frete + MO
-            local newCob = newCmc + totalFerrEdit + cola + frete + maoObra
-            -- PV  = COB / (1 - (margem+imposto+comissao)/100) x (1 - desconto%)  [markup divisor v10]
-            local pctTotalEd = margemPct + impostoPctEd + comissaoPctEd
-            if pctTotalEd > 95.0 do pctTotalEd = 95.0
-            local newPV  = (newCob / (1.0 - pctTotalEd / 100.0)) * (1.0 - desc / 100.0)
+            -- Fase 2 (handoff): precificacao da edicao agora vem da API.
+            -- CMC pre-calculado (chapas imutaveis + fitas novas) e enviado como
+            -- override; a API devolve COB e PV oficiais. Sem fallback local.
+            local cmcPreCalc = cpChapas + ccEfFitas
+            local resPrice = ::apiCalcularPrecificacaoEdicao fitasEdit totalFerrEdit cola frete maoObra \
+                margemPct impostoPctEd comissaoPctEd desc cmcPreCalc
+            if not resPrice[1] do
+            (
+                hideLoad()
+                lbSalvoStatus.Text = "Erro na precificacao via API: " + (resPrice[2] as string)
+                return undefined
+            )
+            local newCmc = resPrice[2][1]
+            local newCob = resPrice[2][2]
+            local newPV  = resPrice[2][4]   -- PV final (com desconto), calculado pela API
 
             if newPV < newCob do
             (
@@ -5982,7 +6404,7 @@ fn abrirCotacoes =
             addLbl grpProjEd "Nome do Projeto:"      8 26 130 16
             txtEditProj    = addTxt grpProjEd 142 24 (EW - 150) 26
             addLbl grpProjEd "Previsao de Entrega:"  8 60 138 16
-            txtEditEntrega = addTxt grpProjEd 148 58 180 26
+            txtEditEntrega = addDate grpProjEd 148 58 180 26
             addLbl grpProjEd "Desconto Global (%):"  8 94 140 16
             txtEditDesc    = addTxt grpProjEd 148 92 80 26
             addLbl grpProjEd "Observacoes:"          8 128 100 16
@@ -6132,8 +6554,8 @@ fn abrirCotacoes =
             lbPecasSalvStatus = addLbl tabEditPecas "" MGN (footY + 34) (TW - MGN*2) 18
             try ( lbPecasSalvStatus.ForeColor = (dotNetClass "System.Drawing.Color").FromArgb 90 96 104 ) catch()
 
-            -- pnlLoad declarado no rollout; mantido invisivel (nao usado como overlay)
-            try ( pnlLoad.Visible = false ) catch()
+            -- (overlay pnlLoad removido — loading agora e indicado pelo rodape
+            --  destacado + cursor de espera em showLoad/hideLoad, sem cobrir a UI)
 
             -- ── Event handlers ──
             dotNet.addEventHandler gridCotacoes "SelectionChanged" onSelChanged
@@ -6300,7 +6722,7 @@ fn abrirCotacoes =
             ))
 
             -- Suspende aceleradores do Max para campos de texto
-            for tb in #(txtEditProj, txtEditEntrega, txtEditDesc, txtEditObs, txtEditCola, txtEditMO, txtEditFrete) do
+            for tb in #(txtEditProj, txtEditDesc, txtEditObs, txtEditCola, txtEditMO, txtEditFrete) do
             (
                 dotNet.addEventHandler tb "GotFocus"  onFocusIn
                 dotNet.addEventHandler tb "LostFocus" onFocusOut
@@ -6332,9 +6754,11 @@ fn abrirCotacoes =
                 messageBox "Selecione uma cotacao primeiro." title:"Exportar"
                 return undefined
             )
-            lbRodape.Text = "Gerando relatorio HTML..."
+            showLoad()
+            lbRodape.Text = "⏳  Gerando relatorio HTML..."
             windows.processPostedMessages()
             local ok = ::apiExportCotacaoHTML G_CotId
+            hideLoad()
             lbRodape.Text = if ok then "Relatorio aberto no navegador." \
                                   else "Erro ao gerar relatorio."
         )
@@ -6346,9 +6770,11 @@ fn abrirCotacoes =
                 messageBox "Selecione uma cotacao primeiro." title:"Proposta ao Cliente"
                 return undefined
             )
-            lbRodape.Text = "Gerando proposta para o cliente..."
+            showLoad()
+            lbRodape.Text = "⏳  Gerando proposta para o cliente..."
             windows.processPostedMessages()
             local ok = ::apiExportPropostaClienteHTML G_CotId
+            hideLoad()
             lbRodape.Text = if ok then "Proposta aberta no navegador." \
                                   else "Erro ao gerar proposta."
         )

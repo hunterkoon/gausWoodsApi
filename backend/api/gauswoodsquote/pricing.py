@@ -30,6 +30,31 @@ def abaixo_custo(pv_final, cob, tolerancia=0.005):
     return pv_final < cob - tolerancia
 
 
+def calcular_mao_obra_detalhada(n_pecas, metros_corte_m, metros_fita_m,
+                                n_ferragens, peso_kg,
+                                base_fixa=50.0, k_peca=2.5, k_corte_m=0.8,
+                                k_fita_m=0.3, k_ferragem=5.0, k_peso_kg=0.2):
+    """Modelo oficial de mao de obra por complexidade fisica do projeto.
+
+    Centraliza a formula que antes vivia apenas no MaxScript (calcularMaoObra):
+
+        MO = base_fixa
+           + n_pecas       * k_peca
+           + metros_corte  * k_corte_m   (perimetro 2x(comp+larg) por peca)
+           + metros_fita   * k_fita_m
+           + n_ferragens   * k_ferragem
+           + peso_kg       * k_peso_kg
+
+    A interface envia apenas os coeficientes (configurados na aba Mao de Obra)
+    e os dados fisicos; o calculo oficial acontece aqui.
+    """
+    if n_pecas <= 0:
+        return 0.0
+    mo = (base_fixa + n_pecas * k_peca + metros_corte_m * k_corte_m +
+          metros_fita_m * k_fita_m + n_ferragens * k_ferragem + peso_kg * k_peso_kg)
+    return round(mo, 2)
+
+
 def calcular_mao_obra(n_pecas, area_total_m2, tempo_medio_peca_min=12.0,
                       valor_hora=45.0):
     """Calcula mao de obra automatica baseada em complexidade do projeto.

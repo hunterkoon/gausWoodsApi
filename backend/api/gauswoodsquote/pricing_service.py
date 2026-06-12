@@ -8,11 +8,12 @@ resultado existente — e o passo 1 da centralizacao do motor de calculo na API
 do calculo monetario).
 """
 
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
-from .pricing import pv_divisor, pv_com_desconto, abaixo_custo, calcular_mao_obra
+from .pricing import (pv_divisor, pv_com_desconto, abaixo_custo,
+                      calcular_mao_obra, calcular_mao_obra_detalhada)
 
 
 # ---------------------------------------------------------------------------
@@ -40,6 +41,17 @@ class PricingFita(BaseModel):
     metros: float = 0.0
     valor_m: float = 0.0
     rolo_m: float = 50.0
+
+
+class MOParams(BaseModel):
+    """Coeficientes do modelo detalhado de mao de obra (aba Mao de Obra do .ms)."""
+    base_fixa:       float = 50.0
+    k_peca:          float = 2.5
+    k_corte_m:       float = 0.8
+    k_fita_m:        float = 0.3
+    k_ferragem:      float = 5.0
+    k_peso_kg:       float = 0.2
+    densidade_kg_m3: float = 700.0
 
 
 class PricingInput(BaseModel):
@@ -76,6 +88,19 @@ class PricingInput(BaseModel):
 
     # Mao de obra
     mao_obra_manual: bool = False
+    # Modelo detalhado de MO (opcional): quando presente, a MO automatica usa
+    # a formula por complexidade fisica (base + pecas + corte + fita + ferragens
+    # + peso) em vez do modelo simplificado por tempo medio.
+    mo_params:   Optional[MOParams] = None
+    n_ferragens: int = 0
+
+    # Custos indiretos (Fase 4 do handoff) — opcionais; com defaults zero o
+    # resultado e identico ao modelo anterior. custo_hora_operacional pode ser
+    # injetado pelo endpoint a partir de configuracoes_gerais.
+    horas_projeto:          float = 0.0
+    horas_fabricacao:       float = 0.0
+    horas_instalacao:       float = 0.0
+    custo_hora_operacional: float = 0.0
 
     # Aproveitamento do plano de corte
     aproveitamento_pct: float = 0.0
@@ -147,6 +172,10 @@ class PricingResult(BaseModel):
 
     mo_auto:  bool
     warnings: List[str] = []
+
+    # Custos indiretos (Fase 4) — zero quando nao parametrizados
+    custo_indireto:         float = 0.0
+    custo_hora_operacional: float = 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -244,9 +273,26 @@ def calcular_pricing(payload: PricingInput) -> PricingResult:
     # Custo de Aquisicao = chapas inteiras + fita por rolo + ferr + cola + frete (SEM MO)
     total_aquisicao = round(custo_chapas + custo_fita_aq + price_ferr + price_cola + price_frete, 2)
 
-    # Mao de obra automatica: quando nao informada, calcula por n_pecas
+    # Mao de obra automatica: quando nao informada, calcula a partir do projeto.
+    # Com mo_params (coeficientes da aba Mao de Obra do .ms), usa o modelo
+    # detalhado oficial; sem eles, o modelo simplificado por tempo medio.
+    mo_modelo = ""
     if price_mo <= 0 and not payload.mao_obra_manual and len(pecas_out) > 0:
-        price_mo = calcular_mao_obra(len(pecas_out), total_area)
+        if payload.mo_params is not None:
+            mp = payload.mo_params
+            metros_corte = sum(2.0 * (p.comp + p.larg) / 1000.0 for p in payload.pecas)
+            peso_kg = sum((p.comp / 1000.0) * (p.larg / 1000.0) * (p.esp / 1000.0)
+                          * mp.densidade_kg_m3 for p in payload.pecas)
+            metros_fita_mo = sum(ft.metros for ft in payload.fitas) if payload.fitas else fita_total
+            price_mo = calcular_mao_obra_detalhada(
+                len(pecas_out), metros_corte, metros_fita_mo,
+                payload.n_ferragens, peso_kg,
+                base_fixa=mp.base_fixa, k_peca=mp.k_peca, k_corte_m=mp.k_corte_m,
+                k_fita_m=mp.k_fita_m, k_ferragem=mp.k_ferragem, k_peso_kg=mp.k_peso_kg)
+            mo_modelo = "detalhada"
+        else:
+            price_mo = calcular_mao_obra(len(pecas_out), total_area)
+            mo_modelo = "simplificada"
         mo_auto = True
     else:
         mo_auto = False
@@ -258,7 +304,10 @@ def calcular_pricing(payload: PricingInput) -> PricingResult:
     if aprov > 0 and aprov < 50:
         warnings.append(f"Aproveitamento muito baixo ({aprov:.1f}%) — k_perda={k_perda:.2f}")
     if mo_auto:
-        warnings.append(f"Mão de obra calculada automaticamente: R$ {price_mo:.2f} ({len(pecas_out)} peças x 12min x R$45/h)")
+        if mo_modelo == "detalhada":
+            warnings.append(f"Mão de obra calculada automaticamente (modelo detalhado): R$ {price_mo:.2f}")
+        else:
+            warnings.append(f"Mão de obra calculada automaticamente: R$ {price_mo:.2f} ({len(pecas_out)} peças x 12min x R$45/h)")
 
     cmc_calc = round(total_mat * (1.0 + k_perda) + custo_fita, 2)
     if payload.custo_produto_geral > 0:
@@ -268,7 +317,16 @@ def calcular_pricing(payload: PricingInput) -> PricingResult:
     else:
         cmc = cmc_calc
 
-    cob_calc = round(cmc + price_ferr + price_cola + price_frete + price_mo, 2)
+    # Custos indiretos (Fase 4): horas x custo_hora_operacional.
+    # Com horas ou custo_hora zerados, custo_indireto = 0 e o COB nao muda.
+    horas_totais = payload.horas_projeto + payload.horas_fabricacao + payload.horas_instalacao
+    custo_indireto = round(horas_totais * payload.custo_hora_operacional, 2)
+    if horas_totais > 0 and payload.custo_hora_operacional <= 0:
+        warnings.append("Horas informadas mas custo_hora_operacional nao configurado — custos indiretos nao aplicados")
+    if custo_indireto > 0:
+        warnings.append(f"Custos indiretos incluidos no COB: R$ {custo_indireto:.2f} ({horas_totais:.1f}h x R$ {payload.custo_hora_operacional:.2f}/h)")
+
+    cob_calc = round(cmc + price_ferr + price_cola + price_frete + price_mo + custo_indireto, 2)
     if payload.custo_operacional > 0:
         cob = payload.custo_operacional
         if cob_calc > 0 and abs(cob - cob_calc) / cob_calc > 0.05:
@@ -317,4 +375,6 @@ def calcular_pricing(payload: PricingInput) -> PricingResult:
         custo_prod_geral=payload.custo_produto_geral,
         mo_auto=mo_auto,
         warnings=warnings,
+        custo_indireto=custo_indireto,
+        custo_hora_operacional=payload.custo_hora_operacional,
     )

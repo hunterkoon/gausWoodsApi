@@ -411,14 +411,25 @@ _pv_divisor = pv_divisor
 
 @router.post("/pricing/calcular", response_model=PricingResult,
              summary="Calcular precificacao (CA/CMC/COB/PV) sem persistir")
-def calcular_precificacao(payload: PricingInput):
+def calcular_precificacao(payload: PricingInput, conn=Depends(get_db)):
     """Motor de calculo central de precificacao.
 
     Recebe chapas, pecas e parametros comerciais brutos e retorna o
     detalhamento completo (CA, CMC, COB, PV bruto/final, alertas).
     Nao persiste nada — uso para preview/validacao e para futura migracao
     do calculo do MaxScript/planilha para esta API.
+
+    Fase 4 (custos indiretos): quando o payload informa horas_* mas nao traz
+    custo_hora_operacional, o valor e derivado de configuracoes_gerais
+    (custos fixos mensais / horas_produtivas_mes).
     """
+    horas_totais = payload.horas_projeto + payload.horas_fabricacao + payload.horas_instalacao
+    if horas_totais > 0 and payload.custo_hora_operacional <= 0:
+        try:
+            from .configuracoes import custo_hora_operacional as _cho
+            payload.custo_hora_operacional = _cho(conn)
+        except Exception:
+            pass  # sem configuracao -> custo indireto zero (modelo atual)
     return calcular_pricing(payload)
 
 

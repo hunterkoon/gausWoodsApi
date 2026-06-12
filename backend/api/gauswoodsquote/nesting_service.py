@@ -2,10 +2,10 @@
 Servico central de plano de corte (nesting) — Gaus Woods.
 
 Porta o motor MAXRECTS (Best Short Side Fit) de cnc_packing.py para a API,
-em formato estruturado (Pydantic). E o passo 1 da centralizacao do calculo
-de plano de corte: hoje o MaxScript escreve um arquivo temporario e chama
-cnc_packing.py via python.ExecuteFile; este modulo expoe a mesma logica via
-HTTP para uso por outros clientes (ex: frontend web).
+em formato estruturado (Pydantic). E a fonte oficial do calculo de plano de
+corte: o MaxScript chama este endpoint via apiCalcularNesting, sem fallback
+local. cnc_packing.py permanece apenas como referencia historica do
+algoritmo original e nao e mais chamado pelo MaxScript.
 """
 
 from typing import List, Dict, Tuple
@@ -211,9 +211,8 @@ def _solve(pieces, bin_w, bin_h, gap, allow_rot):
 def calcular_nesting(payload: NestingInput) -> NestingResult:
     """Calcula o plano de corte (posicao de cada peca em cada chapa).
 
-    Espelha cnc_packing.py — qualquer mudanca no algoritmo deve ser feita
-    aqui E replicada (ou removida) la, ate que o MaxScript pare de chamar
-    cnc_packing.py diretamente.
+    Fonte oficial do algoritmo MAXRECTS; cnc_packing.py e mantido apenas
+    como referencia historica e nao e mais chamado pelo MaxScript.
     """
     pieces = [(p.id, p.w, p.h) for p in payload.pecas]
     pecas_by_id = {p.id: p for p in payload.pecas}

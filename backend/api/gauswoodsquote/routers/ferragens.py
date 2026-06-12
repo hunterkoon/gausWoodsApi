@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from ..database import get_db, query, query_one, count
 from ..deps import pagination, build_page
 from ..schemas import FerragemOut, Page
+from ._search_utils import build_nome_condition
 
 router = APIRouter()
 
@@ -30,7 +31,9 @@ _FROM_COUNT = """
 def _build_where(nome, marca, valor_min, valor_max, fornecedor) -> tuple[str, list]:
     conds, params = [], []
     if nome:
-        conds.append("f.nome ILIKE %s");  params.append(f"%{nome}%")
+        cond, p = build_nome_condition("f.nome", nome)
+        if cond:
+            conds.append(cond); params.extend(p)
     if marca:
         conds.append("m.nome ILIKE %s");  params.append(f"%{marca}%")
     if fornecedor:
